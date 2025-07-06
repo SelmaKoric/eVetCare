@@ -1,0 +1,13 @@
+﻿using System;
+using System.Collections.Generic;
+
+namespace eVetCare.Services.Database;
+
+public partial class PaymentMethod
+{
+    public int MethodId { get; set; }
+
+    public string Name { get; set; } = null!;
+
+    public virtual ICollection<Payment> Payments { get; } = new List<Payment>();
+}

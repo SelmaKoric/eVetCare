@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk.Worker">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>dotnet-eVetCare.Notifications-9e232876-5992-45fe-aa4b-c8d93be8794d</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="EasyNetQ" Version="7.8.0" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="7.0.1" />
+    <PackageReference Include="System.Security.Permissions" Version="9.0.6" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\eVetCare.Model\eVetCare.Model.csproj" />
+   <ProjectReference Include="..\eVetCare.Services\eVetCare.Services.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="Microsoft.EntityFrameworkCore, Version=7.0.0.0, Culture=neutral, PublicKeyToken=adb9793829ddae60" />
+  </ItemGroup>
+</Project>
