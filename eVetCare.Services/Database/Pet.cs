@@ -23,15 +23,17 @@ public partial class Pet
 
     public int? GenderId { get; set; }
 
-    public virtual ICollection<Appointment> Appointments { get; } = new List<Appointment>();
+    public bool? IsDeleted { get; set; }
+
+    public virtual ICollection<Appointment> Appointments { get; set; } = new List<Appointment>();
 
     public virtual Gender? Gender { get; set; }
 
-    public virtual ICollection<MedicalRecord> MedicalRecords { get; } = new List<MedicalRecord>();
+    public virtual ICollection<MedicalRecord> MedicalRecords { get; set; } = new List<MedicalRecord>();
 
     public virtual User Owner { get; set; } = null!;
 
-    public virtual ICollection<Recommendation> Recommendations { get; } = new List<Recommendation>();
+    public virtual ICollection<Recommendation> Recommendations { get; set; } = new List<Recommendation>();
 
     public virtual Species Species { get; set; } = null!;
 }

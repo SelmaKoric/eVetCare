@@ -13,9 +13,11 @@ public partial class Invoice
 
     public DateTime IssueDate { get; set; }
 
+    public bool? IsDeleted { get; set; }
+
     public virtual Appointment Appointment { get; set; } = null!;
 
-    public virtual ICollection<InvoiceItem> InvoiceItems { get; } = new List<InvoiceItem>();
+    public virtual ICollection<InvoiceItem> InvoiceItems { get; set; } = new List<InvoiceItem>();
 
-    public virtual ICollection<Payment> Payments { get; } = new List<Payment>();
+    public virtual ICollection<Payment> Payments { get; set; } = new List<Payment>();
 }

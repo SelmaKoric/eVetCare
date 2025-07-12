@@ -11,5 +11,7 @@ public partial class Treatment
 
     public string TreatmentDescription { get; set; } = null!;
 
+    public bool? IsDeleted { get; set; }
+
     public virtual MedicalRecord MedicalRecord { get; set; } = null!;
 }

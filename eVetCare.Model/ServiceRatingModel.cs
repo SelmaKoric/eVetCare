@@ -5,7 +5,10 @@ namespace eVetCare.Model
     {
         public int OwnerId { get; set; }     
         public int ServiceId { get; set; }   
-        public float Label { get; set; } = 1;  
+        public float Label { get; set; } = 1;
+
+        public bool? IsDeleted { get; set; }
+
     }
 }
 

@@ -9,5 +9,7 @@ public partial class ServiceCategory
 
     public string Name { get; set; } = null!;
 
-    public virtual ICollection<Service> Services { get; } = new List<Service>();
+    public bool? IsDeleted { get; set; }
+
+    public virtual ICollection<Service> Services { get; set; } = new List<Service>();
 }

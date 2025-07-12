@@ -5,7 +5,10 @@ namespace eVetCare.Model
     {
         public int SpeciesId { get; set; }
 
-        public string Name { get; set; } 
+        public string Name { get; set; }
+
+        public bool? IsDeleted { get; set; }
+
     }
 }
 

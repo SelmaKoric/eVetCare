@@ -6,6 +6,9 @@ namespace eVetCare.Model
         public string Name { get; set; } = null!;
 
         public string? Description { get; set; }
+
+        public bool? IsDeleted { get; set; }
+
     }
 }
 

@@ -25,11 +25,13 @@ public partial class User
 
     public bool IsAppUser { get; set; }
 
-    public virtual ICollection<Notification> Notifications { get; } = new List<Notification>();
+    public bool? IsDeleted { get; set; }
 
-    public virtual ICollection<Pet> Pets { get; } = new List<Pet>();
+    public virtual ICollection<Notification> Notifications { get; set; } = new List<Notification>();
 
-    public virtual ICollection<Reminder> Reminders { get; } = new List<Reminder>();
+    public virtual ICollection<Pet> Pets { get; set; } = new List<Pet>();
 
-    public virtual ICollection<UserRole> UserRoles { get; } = new List<UserRole>();
+    public virtual ICollection<Reminder> Reminders { get; set; } = new List<Reminder>();
+
+    public virtual ICollection<UserRole> UserRoles { get; set; } = new List<UserRole>();
 }

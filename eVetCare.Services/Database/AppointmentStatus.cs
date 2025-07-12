@@ -9,5 +9,7 @@ public partial class AppointmentStatus
 
     public string Name { get; set; } = null!;
 
-    public virtual ICollection<Appointment> Appointments { get; } = new List<Appointment>();
+    public bool? IsDeleted { get; set; }
+
+    public virtual ICollection<Appointment> Appointments { get; set; } = new List<Appointment>();
 }

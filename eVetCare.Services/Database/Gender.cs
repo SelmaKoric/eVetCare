@@ -9,5 +9,7 @@ public partial class Gender
 
     public string Name { get; set; } = null!;
 
-    public virtual ICollection<Pet> Pets { get; } = new List<Pet>();
+    public bool? IsDeleted { get; set; }
+
+    public virtual ICollection<Pet> Pets { get; set; } = new List<Pet>();
 }

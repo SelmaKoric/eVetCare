@@ -20,6 +20,9 @@ namespace eVetCare.Model
         public List<AppointmentService> ServiceNames { get; set; } 
 
         public string Status { get; set; } = null!;
+
+        public bool? IsDeleted { get; set; }
+
     }
 }
 

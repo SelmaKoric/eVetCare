@@ -17,9 +17,11 @@ public partial class Service
 
     public int? DurationMinutes { get; set; }
 
-    public virtual ICollection<AppointmentService> AppointmentServices { get; } = new List<AppointmentService>();
+    public bool? IsDeleted { get; set; }
+
+    public virtual ICollection<AppointmentService> AppointmentServices { get; set; } = new List<AppointmentService>();
 
     public virtual ServiceCategory? Category { get; set; }
 
-    public virtual ICollection<InvoiceItem> InvoiceItems { get; } = new List<InvoiceItem>();
+    public virtual ICollection<InvoiceItem> InvoiceItems { get; set; } = new List<InvoiceItem>();
 }

@@ -24,6 +24,9 @@ namespace eVetCare.Model
         public double? Weight { get; set; }
 
         public string? PhotoUrl { get; set; }
+
+        public bool? IsDeleted { get; set; }
+
     }
 }
 

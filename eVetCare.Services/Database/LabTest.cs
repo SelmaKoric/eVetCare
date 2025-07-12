@@ -13,5 +13,7 @@ public partial class LabTest
 
     public string? ReferenceRange { get; set; }
 
-    public virtual ICollection<LabResult> LabResults { get; } = new List<LabResult>();
+    public bool? IsDeleted { get; set; }
+
+    public virtual ICollection<LabResult> LabResults { get; set; } = new List<LabResult>();
 }

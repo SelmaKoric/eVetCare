@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import '../core/config.dart';
 import '../models/search_result.dart';
+import '../utils/logging.dart';
 
 abstract class BaseProvider<T> with ChangeNotifier {
   String endpoint;
@@ -20,9 +21,12 @@ abstract class BaseProvider<T> with ChangeNotifier {
       url = "$url?$query";
     }
 
-    final response = await http.get(
-      Uri.parse(url),
-      headers: createHeaders(), 
+    ApiLogger.logRequest(method: 'GET', url: url, headers: createHeaders());
+    final response = await http.get(Uri.parse(url), headers: createHeaders());
+    ApiLogger.logResponse(
+      statusCode: response.statusCode,
+      url: url,
+      body: response.body,
     );
 
     if (response.statusCode < 300) {

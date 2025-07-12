@@ -14,6 +14,9 @@ namespace eVetCare.Model
         public string MethodName { get; set; } = null!;
 
         public DateTime PaymentDate { get; set; }
+
+        public bool? IsDeleted { get; set; }
+
     }
 }
 

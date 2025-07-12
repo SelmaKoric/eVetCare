@@ -14,6 +14,9 @@ namespace eVetCare.Model
         public bool IsRead { get; set; } 
 
         public virtual User User { get; set; } = null!;
+
+        public bool? IsDeleted { get; set; }
+
     }
 }
 

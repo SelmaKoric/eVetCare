@@ -6,7 +6,7 @@ import 'pages/login_page.dart';
 
 void main() {
   runApp(
-   MultiProvider(
+    MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => PatientProvider()),
         ChangeNotifierProvider(create: (_) => UserProvider()),

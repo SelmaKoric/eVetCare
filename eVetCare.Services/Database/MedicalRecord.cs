@@ -17,15 +17,17 @@ public partial class MedicalRecord
 
     public string? AnalysisProvided { get; set; }
 
+    public bool? IsDeleted { get; set; }
+
     public virtual Appointment Appointment { get; set; } = null!;
 
-    public virtual ICollection<Diagnosis> Diagnoses { get; } = new List<Diagnosis>();
+    public virtual ICollection<Diagnosis> Diagnoses { get; set; } = new List<Diagnosis>();
 
-    public virtual ICollection<LabResult> LabResults { get; } = new List<LabResult>();
+    public virtual ICollection<LabResult> LabResults { get; set; } = new List<LabResult>();
 
     public virtual Pet Pet { get; set; } = null!;
 
-    public virtual ICollection<Treatment> Treatments { get; } = new List<Treatment>();
+    public virtual ICollection<Treatment> Treatments { get; set; } = new List<Treatment>();
 
-    public virtual ICollection<Vaccination> Vaccinations { get; } = new List<Vaccination>();
+    public virtual ICollection<Vaccination> Vaccinations { get; set; } = new List<Vaccination>();
 }

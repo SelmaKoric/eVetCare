@@ -7,8 +7,6 @@
       "applicationUrl": "http://localhost:40409",
       "sslPort": 44314
     }
-    "dotnet",
-    "clean"
   },
   "profiles": {
     "http": {

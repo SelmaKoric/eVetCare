@@ -17,13 +17,15 @@ public partial class Appointment
 
     public TimeSpan? Duration { get; set; }
 
-    public virtual ICollection<AppointmentService> AppointmentServices { get; } = new List<AppointmentService>();
+    public bool? IsDeleted { get; set; }
+
+    public virtual ICollection<AppointmentService> AppointmentServices { get; set; } = new List<AppointmentService>();
 
     public virtual AppointmentStatus AppointmentStatus { get; set; } = null!;
 
-    public virtual ICollection<Invoice> Invoices { get; } = new List<Invoice>();
+    public virtual ICollection<Invoice> Invoices { get; set; } = new List<Invoice>();
 
-    public virtual ICollection<MedicalRecord> MedicalRecords { get; } = new List<MedicalRecord>();
+    public virtual ICollection<MedicalRecord> MedicalRecords { get; set; } = new List<MedicalRecord>();
 
     public virtual Pet Pet { get; set; } = null!;
 }

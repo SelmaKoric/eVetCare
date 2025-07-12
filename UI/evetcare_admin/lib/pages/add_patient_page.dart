@@ -1,4 +1,4 @@
-import 'package:evetcare_admin/core/config.dart';
+import 'package:evetcare_admin/core/config.dart' as config;
 import 'package:evetcare_admin/models/genders.dart';
 import 'package:evetcare_admin/models/species.dart';
 import 'package:evetcare_admin/models/user.dart';
@@ -11,6 +11,8 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 import 'package:provider/provider.dart';
+import '../utils/logging.dart';
+import 'package:flutter/services.dart';
 
 class AddPatientPage extends StatefulWidget {
   const AddPatientPage({super.key});
@@ -106,7 +108,7 @@ class _AddPatientPageState extends State<AddPatientPage> {
     }
 
     try {
-      final uri = Uri.parse('$baseUrl/Pets');
+      final uri = Uri.parse('${config.baseUrl}/Pets');
       final request = http.MultipartRequest("POST", uri)
         ..fields['name'] = _name.text.trim()
         ..fields['speciesId'] = _selectedSpecies!.speciesId.toString()
@@ -144,11 +146,24 @@ class _AddPatientPageState extends State<AddPatientPage> {
         'Authorization': 'Bearer ${Authorization.token}',
       });
 
+      ApiLogger.logRequest(
+        method: 'POST (Multipart)',
+        url: uri.toString(),
+        headers: request.headers,
+        body: request.fields,
+      );
+
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('Adding patient...')));
 
       final response = await request.send();
+      final responseBody = await response.stream.bytesToString();
+      ApiLogger.logResponse(
+        statusCode: response.statusCode,
+        url: uri.toString(),
+        body: responseBody,
+      );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         ScaffoldMessenger.of(context).hideCurrentSnackBar();
@@ -158,11 +173,10 @@ class _AddPatientPageState extends State<AddPatientPage> {
         Navigator.of(context).pop(true);
       } else {
         ScaffoldMessenger.of(context).hideCurrentSnackBar();
-        final error = await response.stream.bytesToString();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'Failed to add patient: ${error.isNotEmpty ? error : 'Unknown error'}',
+              'Failed to add patient: ${responseBody.isNotEmpty ? responseBody : 'Unknown error'}',
             ),
             backgroundColor: Colors.red,
           ),
@@ -239,8 +253,9 @@ class _AddPatientPageState extends State<AddPatientPage> {
 
                       Autocomplete<User>(
                         optionsBuilder: (TextEditingValue textEditingValue) {
-                          if (textEditingValue.text.isEmpty)
+                          if (textEditingValue.text.isEmpty) {
                             return const Iterable<User>.empty();
+                          }
 
                           return _ownerOptions.where((user) {
                             final fullText =
@@ -326,6 +341,9 @@ class _AddPatientPageState extends State<AddPatientPage> {
                           keyboard: TextInputType.phone,
                           validator: _phoneValidator,
                           enabled: _selectedOwner == null,
+                          inputFormatters: [
+                            FilteringTextInputFormatter.digitsOnly,
+                          ],
                         ),
                       ),
 
@@ -388,11 +406,19 @@ class _AddPatientPageState extends State<AddPatientPage> {
                           _age,
                           "Age (years)",
                           keyboard: TextInputType.number,
+                          validator: _requiredValidator,
+                          inputFormatters: [
+                            FilteringTextInputFormatter.digitsOnly,
+                          ],
                         ),
                         _buildTextField(
                           _weight,
                           "Weight (kg)",
                           keyboard: TextInputType.number,
+                          validator: _requiredValidator,
+                          inputFormatters: [
+                            FilteringTextInputFormatter.digitsOnly,
+                          ],
                         ),
                       ),
                       const SizedBox(height: 30),
@@ -455,6 +481,7 @@ class _AddPatientPageState extends State<AddPatientPage> {
     TextInputType? keyboard,
     String? Function(String?)? validator,
     bool enabled = true,
+    List<TextInputFormatter>? inputFormatters,
   }) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
@@ -475,24 +502,24 @@ class _AddPatientPageState extends State<AddPatientPage> {
         ),
         keyboardType: keyboard,
         validator: validator,
+        inputFormatters: inputFormatters,
       ),
     );
   }
 
   @override
-void dispose() {
-  _ownerSearchController.dispose();
-  _ownerFirstName.dispose();
-  _ownerLastName.dispose();
-  _ownerEmail.dispose();
-  _ownerPhoneNumber.dispose();
-  _name.dispose();
-  _breed.dispose();
-  _age.dispose();
-  _weight.dispose();
-  super.dispose();
-}
-
+  void dispose() {
+    _ownerSearchController.dispose();
+    _ownerFirstName.dispose();
+    _ownerLastName.dispose();
+    _ownerEmail.dispose();
+    _ownerPhoneNumber.dispose();
+    _name.dispose();
+    _breed.dispose();
+    _age.dispose();
+    _weight.dispose();
+    super.dispose();
+  }
 }
 
 Widget _buildDropdown<T>({
@@ -530,8 +557,9 @@ String? _requiredValidator(String? value) =>
 
 String? _emailValidator(String? value) {
   if (value == null || value.isEmpty) return 'Email is required';
-  if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value))
+  if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value)) {
     return 'Enter a valid email address';
+  }
   return null;
 }
 

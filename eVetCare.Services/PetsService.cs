@@ -1,12 +1,10 @@
-﻿using System;
-using eVetCare.Model;
+﻿using eVetCare.Model;
 using eVetCare.Model.Requests;
 using eVetCare.Model.SearchObjects;
 using eVetCare.Services.Database;
 using eVetCare.Services.Interfaces;
 using MapsterMapper;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 
 namespace eVetCare.Services
 {
@@ -103,8 +101,15 @@ namespace eVetCare.Services
 
         public override void BeforeUpdate(PetsUpdateRequest request, Pet entity)
         {
-            entity.Age = request.Age;
-            entity.Weight = request.Weight;
+
+            if (request.Age.HasValue)
+            {
+                entity.Age = request.Age.Value;
+            }
+            if (request.Weight.HasValue)
+            {
+                entity.Weight = request.Weight.Value;
+            }
 
             if (request.Photo != null)
             {

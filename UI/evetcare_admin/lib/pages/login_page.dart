@@ -11,12 +11,24 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  final _emailController = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
+  final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _loading = false;
   String? _error;
 
+  String? _usernameValidator(String? value) {
+    if (value == null || value.isEmpty) return 'Username is required';
+    return null;
+  }
+
+  String? _passwordValidator(String? value) {
+    if (value == null || value.isEmpty) return 'Password is required';
+    return null;
+  }
+
   void _handleLogin() async {
+    if (!_formKey.currentState!.validate()) return;
     setState(() {
       _loading = true;
       _error = null;
@@ -24,12 +36,12 @@ class _LoginPageState extends State<LoginPage> {
 
     try {
       final result = await ApiService.login(
-        _emailController.text,
+        _usernameController.text,
         _passwordController.text,
       );
 
       Authorization.token = result?.token;
-      
+
       if (result != null) {
         Navigator.pushReplacement(
           context,
@@ -47,51 +59,57 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(backgroundColor: const Color.fromARGB(255, 90, 183, 226), title: const Text("eVetCare Login")),
+      appBar: AppBar(
+        backgroundColor: const Color.fromARGB(255, 90, 183, 226),
+        title: const Text("eVetCare Login"),
+      ),
       body: Center(
         child: SingleChildScrollView(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 400),
             child: Padding(
               padding: const EdgeInsets.all(24),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  TextField(
-                    decoration: InputDecoration(
-                      labelText: "Username",
-                      prefixIcon: Icon(Icons.email)), 
-                      controller: _emailController,
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    TextFormField(
+                      decoration: const InputDecoration(
+                        labelText: "Username",
+                        prefixIcon: Icon(Icons.person),
+                      ),
+                      controller: _usernameController,
+                      validator: _usernameValidator,
                     ),
-                  const SizedBox(height: 10),
-                  TextField(
-                    decoration: InputDecoration(
-                      labelText: "Password",
-                      prefixIcon: Icon(Icons.password)), 
+                    const SizedBox(height: 10),
+                    TextFormField(
+                      decoration: const InputDecoration(
+                        labelText: "Password",
+                        prefixIcon: Icon(Icons.password),
+                      ),
                       controller: _passwordController,
                       obscureText: true,
+                      validator: _passwordValidator,
                     ),
-                  const SizedBox(height: 10),
-                  if (_error != null)
-                    Text(
-                      _error!,
-                      style: const TextStyle(color: Colors.red),
+                    const SizedBox(height: 10),
+                    if (_error != null)
+                      Text(_error!, style: const TextStyle(color: Colors.red)),
+                    const SizedBox(height: 10),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: _loading ? null : _handleLogin,
+                        child: _loading
+                            ? const CircularProgressIndicator()
+                            : const Text("Login"),
+                      ),
                     ),
-                  const SizedBox(height: 10),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: _loading ? null : _handleLogin,
-                      child: _loading
-                          ? const CircularProgressIndicator()
-                          : const Text("Login"),
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),

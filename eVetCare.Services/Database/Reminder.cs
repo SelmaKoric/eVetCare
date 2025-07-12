@@ -13,5 +13,7 @@ public partial class Reminder
 
     public DateTime? TargetDate { get; set; }
 
+    public bool? IsDeleted { get; set; }
+
     public virtual User User { get; set; } = null!;
 }

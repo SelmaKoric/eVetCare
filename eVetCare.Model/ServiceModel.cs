@@ -19,6 +19,8 @@ namespace eVetCare.Model
 
         public int? DurationMinutes { get; set; }
 
+        public bool? IsDeleted { get; set; }
+
     }
 }
 

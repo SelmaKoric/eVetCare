@@ -7,6 +7,9 @@ namespace eVetCare.Model
 
         public int ServiceId { get; set; }
 
+        public bool? IsDeleted { get; set; }
+
+
     }
 }
 
