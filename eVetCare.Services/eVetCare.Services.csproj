@@ -12,7 +12,6 @@
     <None Remove="Mapping\" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="Interfaces\" />
     <Folder Include="Helpers\" />
     <Folder Include="Mapping\" />
   </ItemGroup>

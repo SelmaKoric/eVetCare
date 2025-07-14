@@ -12,6 +12,9 @@ namespace eVetCare.Model.Requests
         public decimal? Price { get; set; }
 
         public int? DurationMinutes { get; set; }
+
+        public Boolean? isDeleted { get; set; }
+
     }
 }
 

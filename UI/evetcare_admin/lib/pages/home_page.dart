@@ -1,6 +1,7 @@
 import 'package:evetcare_admin/pages/patient_page.dart';
 import 'package:evetcare_admin/widgets/sidebar.dart';
 import 'package:flutter/material.dart';
+import 'package:evetcare_admin/pages/services_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -16,7 +17,7 @@ class _HomePageState extends State<HomePage> {
     PatientsPage(),
     Center(child: Text("Appointments")),
     Center(child: Text("Reports")),
-    Center(child: Text("Services")),
+    ServicesPage(),
     Center(child: Text("Invoices")),
   ];
 
@@ -25,7 +26,7 @@ class _HomePageState extends State<HomePage> {
     "Appointments",
     "Reports",
     "Services",
-    "Invoices"
+    "Invoices",
   ];
 
   @override
@@ -42,9 +43,7 @@ class _HomePageState extends State<HomePage> {
             },
             tabs: tabTitles,
           ),
-          Expanded(
-            child: tabs[selectedIndex],
-          ),
+          Expanded(child: tabs[selectedIndex]),
         ],
       ),
     );

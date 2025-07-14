@@ -32,6 +32,12 @@ namespace eVetCare.Services
                 queryFilter = queryFilter.Where(x => x.Category.Name.Contains(search.CategoryName));
             }
 
+
+            if (search.isDeleted!=null)
+            {
+                queryFilter = queryFilter.Where(x => x.IsDeleted == search.isDeleted);
+            }
+
             return queryFilter;
         }
 
