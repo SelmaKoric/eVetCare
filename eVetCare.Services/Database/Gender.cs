@@ -11,5 +11,7 @@ public partial class Gender
 
     public bool? IsDeleted { get; set; }
 
+    public bool IsActive { get; set; }
+
     public virtual ICollection<Pet> Pets { get; set; } = new List<Pet>();
 }

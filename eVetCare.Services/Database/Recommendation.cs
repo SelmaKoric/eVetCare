@@ -15,5 +15,7 @@ public partial class Recommendation
 
     public bool? IsDeleted { get; set; }
 
+    public bool IsActive { get; set; }
+
     public virtual Pet Pet { get; set; } = null!;
 }

@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-
-namespace eVetCare.Services.Database;
+﻿namespace eVetCare.Services.Database;
 
 public partial class PaymentMethod
 {
@@ -10,6 +7,8 @@ public partial class PaymentMethod
     public string Name { get; set; } = null!;
 
     public bool? IsDeleted { get; set; }
+
+    public bool IsActive { get; set; }
 
     public virtual ICollection<Payment> Payments { get; set; } = new List<Payment>();
 }

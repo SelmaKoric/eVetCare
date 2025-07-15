@@ -13,5 +13,7 @@ public partial class Diagnosis
 
     public bool? IsDeleted { get; set; }
 
+    public bool IsActive { get; set; }
+
     public virtual MedicalRecord MedicalRecord { get; set; } = null!;
 }

@@ -11,5 +11,7 @@ public partial class AppointmentStatus
 
     public bool? IsDeleted { get; set; }
 
+    public bool IsActive { get; set; }
+
     public virtual ICollection<Appointment> Appointments { get; set; } = new List<Appointment>();
 }

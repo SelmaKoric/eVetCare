@@ -13,6 +13,8 @@ public partial class AppointmentService
 
     public bool? IsDeleted { get; set; }
 
+    public bool IsActive { get; set; }
+
     public virtual Appointment Appointment { get; set; } = null!;
 
     public virtual Service Service { get; set; } = null!;

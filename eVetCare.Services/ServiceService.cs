@@ -33,9 +33,9 @@ namespace eVetCare.Services
             }
 
 
-            if (search.isDeleted!=null)
+            if (search.IsActive!=null)
             {
-                queryFilter = queryFilter.Where(x => x.IsDeleted == search.isDeleted);
+                queryFilter = queryFilter.Where(x => x.IsActive == search.IsActive);
             }
 
             return queryFilter;

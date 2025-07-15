@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-
-namespace eVetCare.Services.Database;
+﻿namespace eVetCare.Services.Database;
 
 public partial class Pet
 {
@@ -24,6 +21,8 @@ public partial class Pet
     public int? GenderId { get; set; }
 
     public bool? IsDeleted { get; set; }
+
+    public bool IsActive { get; set; }
 
     public virtual ICollection<Appointment> Appointments { get; set; } = new List<Appointment>();
 

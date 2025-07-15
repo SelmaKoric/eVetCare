@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-
-namespace eVetCare.Services.Database;
+﻿namespace eVetCare.Services.Database;
 
 public partial class Reminder
 {
@@ -14,6 +11,8 @@ public partial class Reminder
     public DateTime? TargetDate { get; set; }
 
     public bool? IsDeleted { get; set; }
+
+    public bool IsActive { get; set; }
 
     public virtual User User { get; set; } = null!;
 }

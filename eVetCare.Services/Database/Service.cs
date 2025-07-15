@@ -19,6 +19,8 @@ public partial class Service
 
     public bool? IsDeleted { get; set; }
 
+    public bool IsActive { get; set; }
+
     public virtual ICollection<AppointmentService> AppointmentServices { get; set; } = new List<AppointmentService>();
 
     public virtual ServiceCategory? Category { get; set; }

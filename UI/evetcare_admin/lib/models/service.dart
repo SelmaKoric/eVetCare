@@ -24,27 +24,7 @@ class Service {
     required this.isDeleted,
   });
 
-  factory Service.fromJson(Map<String, dynamic> json) {
-    return Service(
-      serviceId: json['serviceId'] == null
-          ? 0
-          : (json['serviceId'] as num).toInt(),
-      name: json['name'] == null ? 'undefined' : json['name'] as String,
-      description: json['description'] == null
-          ? 'undefined'
-          : json['description'] as String,
-      categoryId: json['categoryId'] == null
-          ? 0
-          : (json['categoryId'] as num).toInt(),
-      categoryName: json['categoryName'] == null
-          ? 'undefined'
-          : json['categoryName'] as String,
-      price: json['price'] == null ? 0.0 : (json['price'] as num).toDouble(),
-      durationMinutes: json['durationMinutes'] == null
-          ? 0
-          : (json['durationMinutes'] as num).toInt(),
-      isDeleted: json['isDeleted'] == null ? false : json['isDeleted'] as bool,
-    );
-  }
+  factory Service.fromJson(Map<String, dynamic> json) =>
+      _$ServiceFromJson(json);
   Map<String, dynamic> toJson() => _$ServiceToJson(this);
 }

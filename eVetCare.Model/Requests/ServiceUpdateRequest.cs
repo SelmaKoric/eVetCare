@@ -13,7 +13,7 @@ namespace eVetCare.Model.Requests
 
         public int? DurationMinutes { get; set; }
 
-        public Boolean? isDeleted { get; set; }
+        public Boolean? IsActive { get; set; }
 
     }
 }

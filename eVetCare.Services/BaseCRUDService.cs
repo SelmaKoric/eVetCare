@@ -1,7 +1,6 @@
 ﻿using eVetCare.Model.SearchObjects;
 using eVetCare.Services;
 using eVetCare.Services.Database;
-using eVetCare.Services.Interfaces;
 using MapsterMapper;
 
 public abstract class BaseCRUDService<TModel, TSearch, TDbEntity, TInsert, TUpdate> : BaseService<TModel, TSearch, TDbEntity> where TModel : class where TSearch : BaseSearchObject where TDbEntity : class
@@ -37,7 +36,7 @@ public abstract class BaseCRUDService<TModel, TSearch, TDbEntity, TInsert, TUpda
         BeforeUpdate(request, entity);
 
         _context.SaveChanges();
-
+        
         return _mapper.Map<TModel>(entity);
     }
 

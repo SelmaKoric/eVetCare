@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-
-namespace eVetCare.Model
+﻿namespace eVetCare.Model
 {
 	public class Service
 	{
@@ -19,7 +16,7 @@ namespace eVetCare.Model
 
         public int? DurationMinutes { get; set; }
 
-        public bool? IsDeleted { get; set; }
+        public bool? IsActive { get; set; }
 
     }
 }

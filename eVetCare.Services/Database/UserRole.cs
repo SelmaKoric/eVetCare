@@ -13,6 +13,8 @@ public partial class UserRole
 
     public bool? IsDeleted { get; set; }
 
+    public bool IsActive { get; set; }
+
     public virtual Role Role { get; set; } = null!;
 
     public virtual User User { get; set; } = null!;

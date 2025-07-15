@@ -14,4 +14,6 @@ public partial class StatisticsLog
     public DateTime? LoggedAt { get; set; }
 
     public bool? IsDeleted { get; set; }
+
+    public bool IsActive { get; set; }
 }

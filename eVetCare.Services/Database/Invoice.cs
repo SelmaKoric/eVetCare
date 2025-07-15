@@ -15,6 +15,8 @@ public partial class Invoice
 
     public bool? IsDeleted { get; set; }
 
+    public bool IsActive { get; set; }
+
     public virtual Appointment Appointment { get; set; } = null!;
 
     public virtual ICollection<InvoiceItem> InvoiceItems { get; set; } = new List<InvoiceItem>();
