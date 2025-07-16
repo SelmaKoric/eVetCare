@@ -14,7 +14,7 @@ Service _$ServiceFromJson(Map<String, dynamic> json) => Service(
   categoryName: json['categoryName'] as String,
   price: (json['price'] as num?)?.toDouble(),
   durationMinutes: (json['durationMinutes'] as num?)?.toInt(),
-  isDeleted: json['isDeleted'] as bool,
+  isDeleted: json['isDeleted'] == true,
 );
 
 Map<String, dynamic> _$ServiceToJson(Service instance) => <String, dynamic>{
