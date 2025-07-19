@@ -48,6 +48,7 @@ namespace eVetCare.Services
                 query = query.Skip((search.Page.Value - 1) * search.PageSize.Value).Take(search.PageSize.Value);
             }
 
+           
             var list = query.ToList();
             var mappedResults = _mapper.Map<List<TModel>>(list);
             GetPaged<TModel> pagedResult = new GetPaged<TModel>();
