@@ -1,4 +1,7 @@
-﻿namespace eVetCare.Services.Database;
+﻿using System;
+using System.Collections.Generic;
+
+namespace eVetCare.Services.Database;
 
 public partial class Notification
 {
@@ -11,8 +14,6 @@ public partial class Notification
     public DateTime? DateTimeSent { get; set; }
 
     public bool IsRead { get; set; }
-
-    public bool? IsDeleted { get; set; }
 
     public bool IsActive { get; set; }
 

@@ -1,4 +1,7 @@
-﻿namespace eVetCare.Services.Database;
+﻿using System;
+using System.Collections.Generic;
+
+namespace eVetCare.Services.Database;
 
 public partial class MedicalRecord
 {
@@ -13,8 +16,6 @@ public partial class MedicalRecord
     public string? Notes { get; set; }
 
     public string? AnalysisProvided { get; set; }
-
-    public bool? IsDeleted { get; set; }
 
     public bool IsActive { get; set; }
 

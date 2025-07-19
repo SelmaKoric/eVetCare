@@ -21,7 +21,7 @@ namespace eVetCare.Model
 
         public string Status { get; set; } = null!;
 
-        public bool? IsDeleted { get; set; }
+        public bool IsActive { get; set; }
 
     }
 }

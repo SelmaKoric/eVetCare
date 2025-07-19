@@ -9,8 +9,6 @@ public partial class ServiceCategory
 
     public string Name { get; set; } = null!;
 
-    public bool? IsDeleted { get; set; }
-
     public bool IsActive { get; set; }
 
     public virtual ICollection<Service> Services { get; set; } = new List<Service>();

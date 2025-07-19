@@ -17,8 +17,6 @@ public partial class Service
 
     public int? DurationMinutes { get; set; }
 
-    public bool? IsDeleted { get; set; }
-
     public bool IsActive { get; set; }
 
     public virtual ICollection<AppointmentService> AppointmentServices { get; set; } = new List<AppointmentService>();

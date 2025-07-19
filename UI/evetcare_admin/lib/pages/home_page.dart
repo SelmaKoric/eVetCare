@@ -2,6 +2,7 @@ import 'package:evetcare_admin/pages/patient_page.dart';
 import 'package:evetcare_admin/widgets/sidebar.dart';
 import 'package:flutter/material.dart';
 import 'package:evetcare_admin/pages/services_page.dart';
+import 'package:evetcare_admin/pages/appointments_calendar_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -15,7 +16,7 @@ class _HomePageState extends State<HomePage> {
 
   final List<Widget> tabs = [
     PatientsPage(),
-    Center(child: Text("Appointments")),
+    AppointmentsCalendarPage(),
     Center(child: Text("Reports")),
     ServicesPage(),
     Center(child: Text("Invoices")),
@@ -23,7 +24,7 @@ class _HomePageState extends State<HomePage> {
 
   final List<String> tabTitles = [
     "Patients",
-    "Appointments",
+    "Appointments Calendar",
     "Reports",
     "Services",
     "Invoices",

@@ -1,4 +1,7 @@
-﻿namespace eVetCare.Services.Database;
+﻿using System;
+using System.Collections.Generic;
+
+namespace eVetCare.Services.Database;
 
 public partial class Payment
 {
@@ -11,8 +14,6 @@ public partial class Payment
     public int MethodId { get; set; }
 
     public DateTime PaymentDate { get; set; }
-
-    public bool? IsDeleted { get; set; }
 
     public bool IsActive { get; set; }
 

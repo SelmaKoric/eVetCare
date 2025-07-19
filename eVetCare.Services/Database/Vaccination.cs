@@ -15,7 +15,7 @@ public partial class Vaccination
 
     public int MedicalRecordId { get; set; }
 
-    public bool? IsDeleted { get; set; }
+    public bool IsActive { get; set; }
 
     public virtual MedicalRecord MedicalRecord { get; set; } = null!;
 }

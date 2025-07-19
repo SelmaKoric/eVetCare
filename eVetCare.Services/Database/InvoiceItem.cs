@@ -11,8 +11,6 @@ public partial class InvoiceItem
 
     public int ServiceId { get; set; }
 
-    public bool? IsDeleted { get; set; }
-
     public bool IsActive { get; set; }
 
     public virtual Invoice Invoice { get; set; } = null!;

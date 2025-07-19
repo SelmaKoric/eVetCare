@@ -1,4 +1,7 @@
-﻿namespace eVetCare.Services.Database;
+﻿using System;
+using System.Collections.Generic;
+
+namespace eVetCare.Services.Database;
 
 public partial class Pet
 {
@@ -19,8 +22,6 @@ public partial class Pet
     public string? PhotoUrl { get; set; }
 
     public int? GenderId { get; set; }
-
-    public bool? IsDeleted { get; set; }
 
     public bool IsActive { get; set; }
 

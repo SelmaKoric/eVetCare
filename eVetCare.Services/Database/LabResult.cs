@@ -13,8 +13,6 @@ public partial class LabResult
 
     public int? LabTestId { get; set; }
 
-    public bool? IsDeleted { get; set; }
-
     public bool IsActive { get; set; }
 
     public virtual LabTest? LabTest { get; set; }

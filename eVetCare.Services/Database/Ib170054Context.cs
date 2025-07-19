@@ -78,9 +78,6 @@ public partial class Ib170054Context : DbContext
             entity.Property(e => e.AppointmentId).HasColumnName("AppointmentID");
             entity.Property(e => e.AppointmentStatusId).HasDefaultValue(1);
             entity.Property(e => e.IsActive).HasDefaultValue(true);
-            entity.Property(e => e.IsDeleted)
-                .HasDefaultValue(false)
-                .HasColumnName("isDeleted");
             entity.Property(e => e.PetId).HasColumnName("PetID");
 
             entity.HasOne(d => d.AppointmentStatus).WithMany(p => p.Appointments)
@@ -101,9 +98,6 @@ public partial class Ib170054Context : DbContext
             entity.Property(e => e.AppointmentServicesId).HasColumnName("AppointmentServicesID");
             entity.Property(e => e.AppointmentId).HasColumnName("AppointmentID");
             entity.Property(e => e.IsActive).HasDefaultValue(true);
-            entity.Property(e => e.IsDeleted)
-                .HasDefaultValue(false)
-                .HasColumnName("isDeleted");
             entity.Property(e => e.ServiceId).HasColumnName("ServiceID");
 
             entity.HasOne(d => d.Appointment).WithMany(p => p.AppointmentServices)
@@ -124,9 +118,6 @@ public partial class Ib170054Context : DbContext
             entity.HasIndex(e => e.Name, "UQ__Appointm__737584F67F56CD09").IsUnique();
 
             entity.Property(e => e.IsActive).HasDefaultValue(true);
-            entity.Property(e => e.IsDeleted)
-                .HasDefaultValue(false)
-                .HasColumnName("isDeleted");
             entity.Property(e => e.Name).HasMaxLength(50);
         });
 
@@ -137,9 +128,6 @@ public partial class Ib170054Context : DbContext
             entity.Property(e => e.DiagnosisId).HasColumnName("DiagnosisID");
             entity.Property(e => e.Description).HasMaxLength(255);
             entity.Property(e => e.IsActive).HasDefaultValue(true);
-            entity.Property(e => e.IsDeleted)
-                .HasDefaultValue(false)
-                .HasColumnName("isDeleted");
             entity.Property(e => e.MedicalRecordId).HasColumnName("MedicalRecordID");
 
             entity.HasOne(d => d.MedicalRecord).WithMany(p => p.Diagnoses)
@@ -156,9 +144,6 @@ public partial class Ib170054Context : DbContext
 
             entity.Property(e => e.GenderId).HasColumnName("GenderID");
             entity.Property(e => e.IsActive).HasDefaultValue(true);
-            entity.Property(e => e.IsDeleted)
-                .HasDefaultValue(false)
-                .HasColumnName("isDeleted");
             entity.Property(e => e.Name).HasMaxLength(20);
         });
 
@@ -169,9 +154,6 @@ public partial class Ib170054Context : DbContext
             entity.Property(e => e.InvoiceId).HasColumnName("InvoiceID");
             entity.Property(e => e.AppointmentId).HasColumnName("AppointmentID");
             entity.Property(e => e.IsActive).HasDefaultValue(true);
-            entity.Property(e => e.IsDeleted)
-                .HasDefaultValue(false)
-                .HasColumnName("isDeleted");
             entity.Property(e => e.TotalAmount).HasColumnType("decimal(10, 2)");
 
             entity.HasOne(d => d.Appointment).WithMany(p => p.Invoices)
@@ -187,9 +169,6 @@ public partial class Ib170054Context : DbContext
             entity.Property(e => e.InvoiceItemId).HasColumnName("InvoiceItemID");
             entity.Property(e => e.InvoiceId).HasColumnName("InvoiceID");
             entity.Property(e => e.IsActive).HasDefaultValue(true);
-            entity.Property(e => e.IsDeleted)
-                .HasDefaultValue(false)
-                .HasColumnName("isDeleted");
             entity.Property(e => e.ServiceId).HasColumnName("ServiceID");
 
             entity.HasOne(d => d.Invoice).WithMany(p => p.InvoiceItems)
@@ -209,9 +188,6 @@ public partial class Ib170054Context : DbContext
 
             entity.Property(e => e.LabResultId).HasColumnName("LabResultID");
             entity.Property(e => e.IsActive).HasDefaultValue(true);
-            entity.Property(e => e.IsDeleted)
-                .HasDefaultValue(false)
-                .HasColumnName("isDeleted");
             entity.Property(e => e.MedicalRecordId).HasColumnName("MedicalRecordID");
             entity.Property(e => e.ResultValue).HasMaxLength(255);
 
@@ -230,9 +206,6 @@ public partial class Ib170054Context : DbContext
             entity.HasKey(e => e.LabTestId).HasName("PK__LabTests__64D339253100BB88");
 
             entity.Property(e => e.IsActive).HasDefaultValue(true);
-            entity.Property(e => e.IsDeleted)
-                .HasDefaultValue(false)
-                .HasColumnName("isDeleted");
             entity.Property(e => e.Name).HasMaxLength(100);
             entity.Property(e => e.ReferenceRange).HasMaxLength(100);
             entity.Property(e => e.Unit).HasMaxLength(50);
@@ -247,9 +220,6 @@ public partial class Ib170054Context : DbContext
             entity.Property(e => e.AppointmentId).HasColumnName("AppointmentID");
             entity.Property(e => e.Date).HasDefaultValueSql("(getdate())");
             entity.Property(e => e.IsActive).HasDefaultValue(true);
-            entity.Property(e => e.IsDeleted)
-                .HasDefaultValue(false)
-                .HasColumnName("isDeleted");
             entity.Property(e => e.Notes).HasColumnType("text");
             entity.Property(e => e.PetId).HasColumnName("PetID");
 
@@ -273,9 +243,6 @@ public partial class Ib170054Context : DbContext
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime");
             entity.Property(e => e.IsActive).HasDefaultValue(true);
-            entity.Property(e => e.IsDeleted)
-                .HasDefaultValue(false)
-                .HasColumnName("isDeleted");
             entity.Property(e => e.Message).HasMaxLength(255);
             entity.Property(e => e.UserId).HasColumnName("UserID");
 
@@ -293,9 +260,6 @@ public partial class Ib170054Context : DbContext
             entity.Property(e => e.Amount).HasColumnType("decimal(10, 2)");
             entity.Property(e => e.InvoiceId).HasColumnName("InvoiceID");
             entity.Property(e => e.IsActive).HasDefaultValue(true);
-            entity.Property(e => e.IsDeleted)
-                .HasDefaultValue(false)
-                .HasColumnName("isDeleted");
             entity.Property(e => e.MethodId).HasColumnName("MethodID");
 
             entity.HasOne(d => d.Invoice).WithMany(p => p.Payments)
@@ -315,9 +279,6 @@ public partial class Ib170054Context : DbContext
 
             entity.Property(e => e.MethodId).HasColumnName("MethodID");
             entity.Property(e => e.IsActive).HasDefaultValue(true);
-            entity.Property(e => e.IsDeleted)
-                .HasDefaultValue(false)
-                .HasColumnName("isDeleted");
             entity.Property(e => e.Name).HasMaxLength(50);
         });
 
@@ -329,9 +290,6 @@ public partial class Ib170054Context : DbContext
             entity.Property(e => e.Breed).HasMaxLength(100);
             entity.Property(e => e.GenderId).HasColumnName("GenderID");
             entity.Property(e => e.IsActive).HasDefaultValue(true);
-            entity.Property(e => e.IsDeleted)
-                .HasDefaultValue(false)
-                .HasColumnName("isDeleted");
             entity.Property(e => e.Name).HasMaxLength(100);
             entity.Property(e => e.OwnerId).HasColumnName("OwnerID");
             entity.Property(e => e.PhotoUrl).HasMaxLength(255);
@@ -362,9 +320,6 @@ public partial class Ib170054Context : DbContext
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime");
             entity.Property(e => e.IsActive).HasDefaultValue(true);
-            entity.Property(e => e.IsDeleted)
-                .HasDefaultValue(false)
-                .HasColumnName("isDeleted");
             entity.Property(e => e.PetId).HasColumnName("PetID");
 
             entity.HasOne(d => d.Pet).WithMany(p => p.Recommendations)
@@ -379,9 +334,6 @@ public partial class Ib170054Context : DbContext
 
             entity.Property(e => e.ReminderId).HasColumnName("ReminderID");
             entity.Property(e => e.IsActive).HasDefaultValue(true);
-            entity.Property(e => e.IsDeleted)
-                .HasDefaultValue(false)
-                .HasColumnName("isDeleted");
             entity.Property(e => e.TargetDate).HasColumnType("datetime");
             entity.Property(e => e.Type).HasMaxLength(50);
             entity.Property(e => e.UserId).HasColumnName("UserID");
@@ -398,9 +350,6 @@ public partial class Ib170054Context : DbContext
 
             entity.Property(e => e.RoleId).HasColumnName("RoleID");
             entity.Property(e => e.IsActive).HasDefaultValue(true);
-            entity.Property(e => e.IsDeleted)
-                .HasDefaultValue(false)
-                .HasColumnName("isDeleted");
             entity.Property(e => e.RoleName).HasMaxLength(50);
         });
 
@@ -412,9 +361,6 @@ public partial class Ib170054Context : DbContext
             entity.Property(e => e.CategoryId).HasColumnName("CategoryID");
             entity.Property(e => e.Description).HasColumnType("text");
             entity.Property(e => e.IsActive).HasDefaultValue(true);
-            entity.Property(e => e.IsDeleted)
-                .HasDefaultValue(false)
-                .HasColumnName("isDeleted");
             entity.Property(e => e.Name).HasMaxLength(100);
             entity.Property(e => e.Price).HasColumnType("decimal(10, 2)");
 
@@ -431,9 +377,6 @@ public partial class Ib170054Context : DbContext
 
             entity.Property(e => e.CategoryId).HasColumnName("CategoryID");
             entity.Property(e => e.IsActive).HasDefaultValue(true);
-            entity.Property(e => e.IsDeleted)
-                .HasDefaultValue(false)
-                .HasColumnName("isDeleted");
             entity.Property(e => e.Name).HasMaxLength(50);
         });
 
@@ -443,9 +386,6 @@ public partial class Ib170054Context : DbContext
 
             entity.Property(e => e.SpeciesId).HasColumnName("SpeciesID");
             entity.Property(e => e.IsActive).HasDefaultValue(true);
-            entity.Property(e => e.IsDeleted)
-                .HasDefaultValue(false)
-                .HasColumnName("isDeleted");
             entity.Property(e => e.Name).HasMaxLength(50);
         });
 
@@ -457,9 +397,6 @@ public partial class Ib170054Context : DbContext
 
             entity.Property(e => e.StatId).HasColumnName("StatID");
             entity.Property(e => e.IsActive).HasDefaultValue(true);
-            entity.Property(e => e.IsDeleted)
-                .HasDefaultValue(false)
-                .HasColumnName("isDeleted");
             entity.Property(e => e.LoggedAt)
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime");
@@ -473,9 +410,6 @@ public partial class Ib170054Context : DbContext
 
             entity.Property(e => e.TreatmentId).HasColumnName("TreatmentID");
             entity.Property(e => e.IsActive).HasDefaultValue(true);
-            entity.Property(e => e.IsDeleted)
-                .HasDefaultValue(false)
-                .HasColumnName("isDeleted");
             entity.Property(e => e.MedicalRecordId).HasColumnName("MedicalRecordID");
             entity.Property(e => e.TreatmentDescription).HasMaxLength(255);
 
@@ -495,9 +429,6 @@ public partial class Ib170054Context : DbContext
             entity.Property(e => e.Email).HasMaxLength(100);
             entity.Property(e => e.FirstName).HasMaxLength(100);
             entity.Property(e => e.IsActive).HasDefaultValue(true);
-            entity.Property(e => e.IsDeleted)
-                .HasDefaultValue(false)
-                .HasColumnName("isDeleted");
             entity.Property(e => e.LastName).HasMaxLength(100);
             entity.Property(e => e.PasswordHash).HasMaxLength(255);
             entity.Property(e => e.PasswordSalt).HasMaxLength(255);
@@ -511,9 +442,6 @@ public partial class Ib170054Context : DbContext
 
             entity.Property(e => e.UserRoleId).HasColumnName("UserRoleID");
             entity.Property(e => e.IsActive).HasDefaultValue(true);
-            entity.Property(e => e.IsDeleted)
-                .HasDefaultValue(false)
-                .HasColumnName("isDeleted");
             entity.Property(e => e.RoleId).HasColumnName("RoleID");
             entity.Property(e => e.UserId).HasColumnName("UserID");
 
@@ -533,9 +461,7 @@ public partial class Ib170054Context : DbContext
             entity.HasKey(e => e.VaccinationId).HasName("PK__Vaccinat__466BCFA7D1186B97");
 
             entity.Property(e => e.VaccinationId).HasColumnName("VaccinationID");
-            entity.Property(e => e.IsDeleted)
-                .HasDefaultValue(false)
-                .HasColumnName("isDeleted");
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
             entity.Property(e => e.Name).HasMaxLength(100);
 
             entity.HasOne(d => d.MedicalRecord).WithMany(p => p.Vaccinations)

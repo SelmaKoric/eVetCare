@@ -17,8 +17,6 @@ public partial class Appointment
 
     public TimeSpan? Duration { get; set; }
 
-    public bool? IsDeleted { get; set; }
-
     public bool IsActive { get; set; }
 
     public virtual ICollection<AppointmentService> AppointmentServices { get; set; } = new List<AppointmentService>();

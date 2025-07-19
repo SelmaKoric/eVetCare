@@ -10,7 +10,7 @@ import '../models/service_category.dart';
 import 'package:flutter/services.dart';
 
 class ServicesPage extends StatefulWidget {
-  const ServicesPage({Key? key}) : super(key: key);
+  const ServicesPage({super.key});
 
   @override
   State<ServicesPage> createState() => _ServicesPageState();
@@ -21,7 +21,7 @@ class _ServicesPageState extends State<ServicesPage> {
   late Future<SearchResult<Service>> _futureServices;
   String _searchQuery = '';
   int _page = 1;
-  int _pageSize = 10;
+  final int _pageSize = 10;
 
   final TextEditingController _searchController = TextEditingController();
 
@@ -510,6 +510,8 @@ class _ServicesPageState extends State<ServicesPage> {
 }
 
 class AddServiceDialog extends StatefulWidget {
+  const AddServiceDialog({super.key});
+
   @override
   State<AddServiceDialog> createState() => _AddServiceDialogState();
 }
@@ -738,10 +740,10 @@ class EditServiceDialog extends StatefulWidget {
   final Service service;
   final List<ServiceCategory> categories;
   const EditServiceDialog({
-    Key? key,
+    super.key,
     required this.service,
     required this.categories,
-  }) : super(key: key);
+  });
 
   @override
   State<EditServiceDialog> createState() => _EditServiceDialogState();
