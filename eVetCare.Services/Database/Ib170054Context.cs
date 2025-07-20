@@ -76,7 +76,6 @@ public partial class Ib170054Context : DbContext
             entity.HasKey(e => e.AppointmentId).HasName("PK__Appointm__8ECDFCA2B5388698");
 
             entity.Property(e => e.AppointmentId).HasColumnName("AppointmentID");
-            entity.Property(e => e.AppointmentStatusId).HasDefaultValue(1);
             entity.Property(e => e.IsActive).HasDefaultValue(true);
             entity.Property(e => e.PetId).HasColumnName("PetID");
 

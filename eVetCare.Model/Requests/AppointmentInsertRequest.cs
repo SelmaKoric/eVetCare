@@ -16,6 +16,8 @@ namespace eVetCare.Model.Requests
         public List<int> ServiceIds { get; set; }
 
         public int? AppointmentStatus { get; set; }
+
+        public bool CreatedByAdmin { get; set; }
     }
 }
 

@@ -13,6 +13,7 @@ class Appointment {
   final List<ServiceName> serviceNames;
   final String status;
   final bool isActive;
+  final String? duration; // Add duration field
 
   Appointment({
     required this.appointmentId,
@@ -24,6 +25,7 @@ class Appointment {
     required this.serviceNames,
     required this.status,
     required this.isActive,
+    this.duration,
   });
 
   factory Appointment.fromJson(Map<String, dynamic> json) {
@@ -41,6 +43,7 @@ class Appointment {
           [],
       status: json['status'],
       isActive: json['isActive'] ?? true,
+      duration: json['duration'], // Parse duration
     );
   }
 }

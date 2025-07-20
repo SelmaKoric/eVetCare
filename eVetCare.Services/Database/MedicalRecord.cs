@@ -11,7 +11,7 @@ public partial class MedicalRecord
 
     public int AppointmentId { get; set; }
 
-    public DateTime Date { get; set; }
+    public DateOnly Date { get; set; }
 
     public string? Notes { get; set; }
 

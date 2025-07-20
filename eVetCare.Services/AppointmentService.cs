@@ -1,14 +1,15 @@
-﻿using System;
-using EasyNetQ;
+﻿using EasyNetQ;
 using eVetCare.Model.Enums;
 using eVetCare.Model.Messaging;
 using eVetCare.Model.Requests;
 using eVetCare.Model.SearchObjects;
 using eVetCare.Services.Database;
+using eVetCare.Services.Exceptions;
 using eVetCare.Services.Helpers;
 using eVetCare.Services.Interfaces;
 using MapsterMapper;
 using Microsoft.EntityFrameworkCore;
+using System;
 
 namespace eVetCare.Services
 {
@@ -63,6 +64,29 @@ namespace eVetCare.Services
 
         public override void BeforeInsert(AppointmentInsertRequest request, Appointment entity)
         {
+            var newStart = RoundToMinute(request.Date.Date + request.Time);
+            var newEnd = newStart + (request.Duration ?? TimeSpan.FromMinutes(30));
+
+            var sameDayAppointments = _context.Appointments
+                .Where(a => a.Date.Date == request.Date.Date)
+                .ToList();
+
+            foreach (var a in sameDayAppointments)
+            {
+                var existingStart = RoundToMinute(a.Date.Date + a.Time);
+                var existingEnd = existingStart + (a.Duration ?? TimeSpan.FromMinutes(30));
+
+                var roundedNewStart = RoundToMinute(newStart);
+                var roundedNewEnd = RoundToMinute(newEnd);
+
+                Console.WriteLine($"existingStart: {existingStart:yyyy-MM-dd HH:mm}, existingEnd: {existingEnd:yyyy-MM-dd HH:mm}, newStart: {roundedNewStart:yyyy-MM-dd HH:mm}, newEnd: {roundedNewEnd:yyyy-MM-dd HH:mm}");
+
+                if (existingStart < roundedNewEnd && existingEnd > roundedNewStart)
+                {
+                    throw new AppointmentOverlapException();
+                }
+            }
+
             if (!_context.Pets.Any(p => p.PetId == request.PetId))
             {
                 throw new Exception("Invalid PetId provided.");
@@ -88,13 +112,19 @@ namespace eVetCare.Services
                 });
             }
 
-            if (request.AppointmentStatus.HasValue &&
-                !_context.AppointmentStatuses.Any(s => s.AppointmentStatusId == request.AppointmentStatus.Value))
+            if (request.CreatedByAdmin == true)
             {
-                throw new Exception("Invalid AppointmentStatusId provided.");
+                entity.AppointmentStatusId = 2;
             }
-
-            if (!request.AppointmentStatus.HasValue)
+            else if (request.AppointmentStatus.HasValue)
+            {
+                if (!_context.AppointmentStatuses.Any(s => s.AppointmentStatusId == request.AppointmentStatus.Value))
+                {
+                    throw new Exception("Invalid AppointmentStatusId provided.");
+                }
+                entity.AppointmentStatusId = request.AppointmentStatus.Value;
+            }
+            else
             {
                 var defaultStatus = _context.AppointmentStatuses
                     .FirstOrDefault(s => s.AppointmentStatusId == 1);
@@ -106,7 +136,6 @@ namespace eVetCare.Services
 
                 entity.AppointmentStatusId = defaultStatus.AppointmentStatusId;
             }
-
         }
 
         public override Model.Appointment GetById(int id)
@@ -243,6 +272,11 @@ namespace eVetCare.Services
             };
 
             _bus.PubSub.Publish(message);
+        }
+
+        private static DateTime RoundToMinute(DateTime dt)
+        {
+            return new DateTime(dt.Year, dt.Month, dt.Day, dt.Hour, dt.Minute, 0);
         }
     }
 }

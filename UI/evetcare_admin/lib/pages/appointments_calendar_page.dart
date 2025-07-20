@@ -83,8 +83,21 @@ class _AppointmentsCalendarPageState extends State<AppointmentsCalendarPage> {
         startHour,
         startMinute,
       );
-      final end = start.add(const Duration(hours: 1));
-      print('Adding event: ${appt.petName} $start - $end');
+      // Parse duration (HH:mm:ss)
+      Duration duration = const Duration(hours: 1); // default
+      if (appt.duration != null) {
+        final durParts = appt.duration!.split(":");
+        if (durParts.length >= 2) {
+          final h = int.tryParse(durParts[0]) ?? 0;
+          final m = int.tryParse(durParts[1]) ?? 0;
+          final s = durParts.length > 2 ? int.tryParse(durParts[2]) ?? 0 : 0;
+          duration = Duration(hours: h, minutes: m, seconds: s);
+        }
+      }
+      final end = start.add(duration);
+      print(
+        'Adding event: ${appt.petName} $start - $end (duration: $duration)',
+      );
       _controller?.add(
         CalendarEventData(
           title: appt.petName,
@@ -93,6 +106,7 @@ class _AppointmentsCalendarPageState extends State<AppointmentsCalendarPage> {
           endTime: end,
           description: "Owner: ${appt.ownerName}",
           color: _getStatusColor(appt.status),
+          event: appt, // <-- ADD THIS LINE
         ),
       );
     }
@@ -219,23 +233,53 @@ class _AppointmentsCalendarPageState extends State<AppointmentsCalendarPage> {
                     },
                     eventTileBuilder: (date, events, bound, start, end) {
                       final event = events.first;
-                      return Positioned(
-                        top: bound.top,
-                        left: bound.left,
-                        width: bound.width,
-                        height: bound.height,
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: event.color,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          padding: const EdgeInsets.all(6),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                event.title ?? '',
+                      // Extract owner name from description ("Owner: ...")
+                      String ownerName = '';
+                      if (event.description != null &&
+                          event.description!.startsWith('Owner: ')) {
+                        ownerName = event.description!.substring(7);
+                      }
+                      // Compose title: PetName (OwnerName)
+                      final titleText = ownerName.isNotEmpty
+                          ? '${event.title} ($ownerName)'
+                          : event.title ?? '';
+                      // Extract services from event (if available)
+                      String servicesText = '';
+                      if (event is CalendarEventData &&
+                          event.event != null &&
+                          event.event is Appointment) {
+                        final appt = event.event as Appointment;
+                        final sn = appt.serviceNames;
+                        if (sn is List) {
+                          servicesText = sn
+                              .map(
+                                (s) => s is ServiceName
+                                    ? s.name
+                                    : (s is String ? s : ''),
+                              )
+                              .where((s) => s.toString().isNotEmpty)
+                              .join(', ');
+                        } else {
+                          servicesText = sn.toString();
+                        }
+                      }
+                      // Show services if available and not empty
+                      final showServices = servicesText.isNotEmpty;
+                      return Container(
+                        decoration: BoxDecoration(
+                          color: event.color,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        padding: const EdgeInsets.all(4),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            FittedBox(
+                              fit: BoxFit.scaleDown,
+                              alignment: Alignment.centerLeft,
+                              child: Text(
+                                titleText,
                                 style: const TextStyle(
                                   color: Colors.white,
                                   fontWeight: FontWeight.bold,
@@ -244,21 +288,40 @@ class _AppointmentsCalendarPageState extends State<AppointmentsCalendarPage> {
                                 ),
                                 maxLines: 1,
                               ),
-                              if (event.description != null &&
-                                  event.description!.isNotEmpty)
-                                Text(
-                                  event.description!,
+                            ),
+                            if (showServices)
+                              FittedBox(
+                                fit: BoxFit.scaleDown,
+                                alignment: Alignment.centerLeft,
+                                child: Text(
+                                  servicesText,
                                   style: const TextStyle(
                                     color: Colors.white,
                                     fontSize: 11,
                                     overflow: TextOverflow.ellipsis,
                                   ),
-                                  maxLines: 2,
+                                  maxLines: 1,
                                 ),
-                            ],
-                          ),
+                              ),
+                          ],
                         ),
                       );
+                    },
+                    onEventTap: (events, date) {
+                      print('onEventTap triggered!'); // Debug print
+                      final event = events.first;
+                      print('Tapped event: ' + event.toString()); // Debug print
+                      if (event is CalendarEventData &&
+                          event.event is Appointment) {
+                        final appt = event.event as Appointment;
+                        showDialog(
+                          context: context,
+                          builder: (context) => _EditAppointmentDialog(
+                            appointment: appt,
+                            selectedDate: _selectedDate,
+                          ),
+                        );
+                      }
                     },
                   );
                 },
@@ -527,15 +590,29 @@ class _AddAppointmentDialogState extends State<_AddAppointmentDialog> {
                     setState(() {
                       _loading = true;
                     });
+                    // Format time as HH:mm:ss
+                    String? formattedTime;
+                    if (_time != null) {
+                      final hour = _time!.hour.toString().padLeft(2, '0');
+                      final minute = _time!.minute.toString().padLeft(2, '0');
+                      formattedTime = '$hour:$minute:00';
+                    }
+                    // Format duration as HH:mm:ss
+                    String? formattedDuration;
+                    if (_duration != null) {
+                      final min = int.tryParse(_duration!) ?? 0;
+                      final h = (min ~/ 60).toString().padLeft(2, '0');
+                      final m = (min % 60).toString().padLeft(2, '0');
+                      formattedDuration = '$h:$m:00';
+                    }
                     final appointmentData = {
                       'petId': _petId,
                       'date': _date != null ? _date!.toIso8601String() : null,
-                      'time': _time != null ? _time!.format(context) : null,
-                      'duration': _duration != null
-                          ? _durationToBackend(_duration!)
-                          : null,
+                      'time': formattedTime,
+                      'duration': formattedDuration,
                       'serviceIds': _serviceIds,
-                      'appointmentStatus': 2,
+                      'appointmentStatus': 2, // Hardcoded
+                      'createdByAdmin': true, // Hardcoded
                     };
                     try {
                       final response = await http.post(
@@ -559,14 +636,14 @@ class _AddAppointmentDialogState extends State<_AddAppointmentDialog> {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             content: Text(
-                              'Failed to add appointment: ${response.body}',
+                              'Failed to add appointment:  {response.body}',
                             ),
                           ),
                         );
                       }
                     } catch (e) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Error: ${e.toString()}')),
+                        SnackBar(content: Text('Error:  {e.toString()}')),
                       );
                     } finally {
                       if (mounted)
@@ -584,6 +661,520 @@ class _AddAppointmentDialogState extends State<_AddAppointmentDialog> {
                 )
               : const Text('Submit'),
         ),
+      ],
+    );
+  }
+}
+
+class _EditAppointmentDialog extends StatefulWidget {
+  final Appointment appointment;
+  final DateTime selectedDate;
+  const _EditAppointmentDialog({
+    Key? key,
+    required this.appointment,
+    required this.selectedDate,
+  }) : super(key: key);
+  @override
+  State<_EditAppointmentDialog> createState() => _EditAppointmentDialogState();
+}
+
+class _EditAppointmentDialogState extends State<_EditAppointmentDialog> {
+  final _formKey = GlobalKey<FormState>();
+  int? _petId;
+  DateTime? _date;
+  TimeOfDay? _time;
+  String? _duration;
+  List<int> _serviceIds = [];
+  String? _status;
+
+  List<Patient> _pets = [];
+  List<Service> _services = [];
+  bool _loading = true;
+  String? _error;
+
+  final List<String> _statusOptions = [
+    'pending',
+    'approved',
+    'rejected',
+    'completed',
+    'canceled',
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchLookups();
+    _initFieldsFromAppointment();
+  }
+
+  void _initFieldsFromAppointment() {
+    final appt = widget.appointment;
+    _petId = appt.petId;
+    _date = DateTime.tryParse(appt.date);
+    final timeParts = appt.time.split(":");
+    if (timeParts.length >= 2) {
+      _time = TimeOfDay(
+        hour: int.tryParse(timeParts[0]) ?? 0,
+        minute: int.tryParse(timeParts[1]) ?? 0,
+      );
+    }
+    if (appt.duration != null) {
+      final durParts = appt.duration!.split(":");
+      if (durParts.length >= 2) {
+        final min =
+            (int.tryParse(durParts[0]) ?? 0) * 60 +
+            (int.tryParse(durParts[1]) ?? 0);
+        _duration = min.toString();
+      }
+    }
+    _serviceIds = appt.serviceNames is List
+        ? (appt.serviceNames as List)
+              .map((s) {
+                if (s is ServiceName) {
+                  final match = _services.firstWhere(
+                    (srv) => srv.name == s.name,
+                    orElse: () => Service(
+                      serviceId: -1,
+                      name: '',
+                      description: '',
+                      categoryId: 0,
+                      categoryName: '',
+                      price: 0.0,
+                      durationMinutes: 0,
+                      isDeleted: false,
+                    ),
+                  );
+                  return match.serviceId;
+                } else if (s is String) {
+                  final match = _services.firstWhere(
+                    (srv) => srv.name == s,
+                    orElse: () => Service(
+                      serviceId: -1,
+                      name: '',
+                      description: '',
+                      categoryId: 0,
+                      categoryName: '',
+                      price: 0.0,
+                      durationMinutes: 0,
+                      isDeleted: false,
+                    ),
+                  );
+                  return match.serviceId;
+                }
+                return null;
+              })
+              .whereType<int>()
+              .where((id) => id != -1)
+              .toList()
+        : [];
+    _status = appt.status.toLowerCase();
+  }
+
+  Future<void> _fetchLookups() async {
+    setState(() {
+      _loading = true;
+    });
+    try {
+      final patientProvider = PatientProvider();
+      final serviceProvider = ServiceProvider();
+      final pets = await patientProvider.get();
+      final services = await serviceProvider.get();
+      setState(() {
+        _pets = pets.result;
+        _services = services.result;
+        _loading = false;
+        _initFieldsFromAppointment();
+        // Ensure _petId is valid
+        if (_petId != null && !_pets.any((pet) => pet.petId == _petId)) {
+          _petId = null;
+        }
+      });
+    } catch (e) {
+      setState(() {
+        _error = 'Failed to load options:  [200~ [0m${e.toString()}';
+        _loading = false;
+      });
+    }
+  }
+
+  List<String> get _durationOptions {
+    List<String> options = [];
+    for (int min = 30; min <= 240; min += 30) {
+      options.add(min.toString());
+    }
+    return options;
+  }
+
+  String _durationLabel(String minutesStr) {
+    final min = int.tryParse(minutesStr) ?? 0;
+    if (min == 30) return '30 min';
+    final h = min ~/ 60;
+    final m = min % 60;
+    if (m == 0) {
+      return ' $h hour${h > 1 ? 's' : ''}';
+    } else {
+      return ' $h hour${h > 1 ? 's' : ''} $m min';
+    }
+  }
+
+  String _durationToBackend(String minutesStr) {
+    final min = int.tryParse(minutesStr) ?? 0;
+    final h = (min ~/ 60).toString().padLeft(2, '0');
+    final m = (min % 60).toString().padLeft(2, '0');
+    return '$h:$m:00';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isPending = _status == 'pending';
+    final isApproved = _status == 'approved';
+    return AlertDialog(
+      title: const Text('Edit Appointment'),
+      content: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 400, maxHeight: 500),
+        child: _loading
+            ? const SizedBox(
+                height: 120,
+                child: Center(child: CircularProgressIndicator()),
+              )
+            : _error != null
+            ? SizedBox(height: 120, child: Center(child: Text(_error!)))
+            : SingleChildScrollView(
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Pet Dropdown
+                      DropdownButtonFormField<int>(
+                        value: _petId,
+                        decoration: const InputDecoration(labelText: 'Pet'),
+                        items: _pets.where((pet) => pet.petId != null).map((
+                          pet,
+                        ) {
+                          return DropdownMenuItem<int>(
+                            value: pet.petId!,
+                            child: Text(
+                              '${pet.name ?? ''} (${pet.ownerName ?? ''})',
+                            ),
+                          );
+                        }).toList(),
+                        onChanged: (val) => setState(() => _petId = val),
+                        validator: (val) =>
+                            val == null ? 'Pet is required' : null,
+                      ),
+                      // Date
+                      TextFormField(
+                        readOnly: true,
+                        decoration: const InputDecoration(labelText: 'Date'),
+                        controller: TextEditingController(
+                          text: _date == null
+                              ? ''
+                              : '${_date!.day.toString().padLeft(2, '0')}/${_date!.month.toString().padLeft(2, '0')}/${_date!.year}',
+                        ),
+                        onTap: () async {
+                          final picked = await showDatePicker(
+                            context: context,
+                            initialDate: _date ?? DateTime.now(),
+                            firstDate: DateTime(2000),
+                            lastDate: DateTime(2100),
+                          );
+                          if (picked != null) {
+                            setState(() {
+                              _date = picked;
+                            });
+                          }
+                        },
+                        validator: (value) =>
+                            _date == null ? 'Date is required' : null,
+                      ),
+                      // Time
+                      TextFormField(
+                        readOnly: true,
+                        decoration: const InputDecoration(labelText: 'Time'),
+                        controller: TextEditingController(
+                          text: _time == null ? '' : _time!.format(context),
+                        ),
+                        onTap: () async {
+                          final picked = await showTimePicker(
+                            context: context,
+                            initialTime: _time ?? TimeOfDay.now(),
+                          );
+                          if (picked != null) {
+                            setState(() {
+                              _time = picked;
+                            });
+                          }
+                        },
+                        validator: (value) =>
+                            _time == null ? 'Time is required' : null,
+                      ),
+                      // Duration Dropdown
+                      DropdownButtonFormField<String>(
+                        value: _duration,
+                        decoration: const InputDecoration(
+                          labelText: 'Duration',
+                        ),
+                        items: _durationOptions
+                            .map(
+                              (d) => DropdownMenuItem(
+                                value: d,
+                                child: Text(_durationLabel(d)),
+                              ),
+                            )
+                            .toList(),
+                        onChanged: (val) => setState(() => _duration = val),
+                        validator: (val) =>
+                            val == null ? 'Duration is required' : null,
+                      ),
+                      // Services Multi-select
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: Padding(
+                          padding: const EdgeInsets.only(
+                            top: 16.0,
+                            bottom: 4.0,
+                          ),
+                          child: Text(
+                            'Services',
+                            style: TextStyle(fontWeight: FontWeight.w600),
+                          ),
+                        ),
+                      ),
+                      Wrap(
+                        spacing: 8,
+                        children: _services
+                            .where((service) => service.serviceId != null)
+                            .map((service) {
+                              final selected = _serviceIds.contains(
+                                service.serviceId,
+                              );
+                              return FilterChip(
+                                label: Text(
+                                  service.name,
+                                  style: TextStyle(
+                                    color: selected
+                                        ? Colors.white
+                                        : Colors.black,
+                                  ),
+                                ),
+                                selected: selected,
+                                selectedColor: Theme.of(
+                                  context,
+                                ).colorScheme.primary,
+                                checkmarkColor: Colors.white,
+                                backgroundColor: Colors.grey[200],
+                                onSelected: null, // Make chips read-only
+                              );
+                            })
+                            .toList(),
+                      ),
+                      if (_serviceIds.isEmpty)
+                        const Padding(
+                          padding: EdgeInsets.only(top: 4.0),
+                          child: Align(
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              'Select at least one service',
+                              style: TextStyle(color: Colors.red, fontSize: 12),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+        if (isPending) ...[
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: _loading
+                ? null
+                : () async {
+                    setState(() {
+                      _loading = true;
+                    });
+                    try {
+                      final url =
+                          'http://localhost:5081/Appointments/${widget.appointment.appointmentId}/reject';
+                      print('Rejecting appointment: $url');
+                      final response = await http.put(
+                        Uri.parse(url),
+                        headers: createHeaders(),
+                      );
+                      print('Reject response status: ${response.statusCode}');
+                      print('Reject response body: ${response.body}');
+                      if (response.statusCode >= 200 &&
+                          response.statusCode < 300) {
+                        Navigator.of(context).pop();
+                        final appointmentProvider =
+                            Provider.of<AppointmentProvider>(
+                              context,
+                              listen: false,
+                            );
+                        appointmentProvider.fetchAppointmentsForDate(
+                          widget.selectedDate,
+                        );
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              'Failed to reject appointment: \n${response.body}',
+                            ),
+                          ),
+                        );
+                      }
+                    } catch (e) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Error: \n${e.toString()}')),
+                      );
+                    } finally {
+                      if (mounted)
+                        Future.microtask(
+                          () => setState(() {
+                            _loading = false;
+                          }),
+                        );
+                    }
+                  },
+            child: _loading
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Text('Reject'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.green,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: _loading
+                ? null
+                : () async {
+                    setState(() {
+                      _loading = true;
+                    });
+                    try {
+                      final response = await http.put(
+                        Uri.parse(
+                          'http://localhost:5081/Appointments/${widget.appointment.appointmentId}/approve',
+                        ),
+                        headers: createHeaders(),
+                      );
+                      print('Approve response status: ${response.statusCode}');
+                      print('Approve response body: ${response.body}');
+                      if (response.statusCode >= 200 &&
+                          response.statusCode < 300) {
+                        Navigator.of(context).pop();
+                        final appointmentProvider =
+                            Provider.of<AppointmentProvider>(
+                              context,
+                              listen: false,
+                            );
+                        appointmentProvider.fetchAppointmentsForDate(
+                          widget.selectedDate,
+                        );
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              'Failed to approve appointment: \n${response.body}',
+                            ),
+                          ),
+                        );
+                      }
+                    } catch (e) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Error: \n${e.toString()}')),
+                      );
+                    } finally {
+                      if (mounted)
+                        Future.microtask(
+                          () => setState(() {
+                            _loading = false;
+                          }),
+                        );
+                    }
+                  },
+            child: _loading
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Text('Approve'),
+          ),
+        ] else if (isApproved) ...[
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: _loading
+                ? null
+                : () async {
+                    setState(() {
+                      _loading = true;
+                    });
+                    try {
+                      final response = await http.post(
+                        Uri.parse(
+                          'http://localhost:5081/Appointments/${widget.appointment.appointmentId}/reject',
+                        ),
+                        headers: createHeaders(),
+                      );
+                      if (response.statusCode >= 200 &&
+                          response.statusCode < 300) {
+                        Navigator.of(context).pop();
+                        final appointmentProvider =
+                            Provider.of<AppointmentProvider>(
+                              context,
+                              listen: false,
+                            );
+                        appointmentProvider.fetchAppointmentsForDate(
+                          widget.selectedDate,
+                        );
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              'Failed to reject appointment: \n${response.body}',
+                            ),
+                          ),
+                        );
+                      }
+                    } catch (e) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Error: \n${e.toString()}')),
+                      );
+                    } finally {
+                      if (mounted)
+                        Future.microtask(
+                          () => setState(() {
+                            _loading = false;
+                          }),
+                        );
+                    }
+                  },
+            child: _loading
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Text('Reject'),
+          ),
+        ],
       ],
     );
   }

@@ -19,6 +19,8 @@ public partial class Appointment
 
     public bool IsActive { get; set; }
 
+    public bool CreatedByAdmin { get; set; }
+
     public virtual ICollection<AppointmentService> AppointmentServices { get; set; } = new List<AppointmentService>();
 
     public virtual AppointmentStatus AppointmentStatus { get; set; } = null!;
