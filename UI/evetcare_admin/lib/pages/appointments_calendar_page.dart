@@ -3,6 +3,13 @@ import 'package:calendar_view/calendar_view.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../providers/appointment_provider.dart';
+import '../providers/patient_provider.dart';
+import '../providers/service_provider.dart';
+import '../models/patient.dart';
+import '../models/service.dart';
+import 'dart:convert'; // Added for jsonEncode
+import 'package:http/http.dart' as http; // Added for http
+import '../core/auth_utils.dart'; // For createHeaders
 
 class AppointmentsCalendarPage extends StatefulWidget {
   const AppointmentsCalendarPage({super.key});
@@ -84,13 +91,31 @@ class _AppointmentsCalendarPageState extends State<AppointmentsCalendarPage> {
           date: _selectedDate,
           startTime: start,
           endTime: end,
-          description: "Owner: ${appt.ownerName}\nStatus: ${appt.status}",
-          color: appt.status == 'Completed' ? Colors.green : Colors.blue,
+          description: "Owner: ${appt.ownerName}",
+          color: _getStatusColor(appt.status),
         ),
       );
     }
     _eventsAddedForDate = true;
     _lastMappedAppointments = appointments;
+  }
+
+  Color _getStatusColor(String status) {
+    switch (status.toLowerCase()) {
+      case 'pending':
+        return Colors.orange;
+      case 'approved':
+        return Colors.blue;
+      case 'rejected':
+        return Colors.red;
+      case 'completed':
+        return Colors.green;
+      case 'canceled':
+      case 'cancelled':
+        return Colors.grey;
+      default:
+        return Colors.blueGrey;
+    }
   }
 
   @override
@@ -124,6 +149,19 @@ class _AppointmentsCalendarPageState extends State<AppointmentsCalendarPage> {
                   onPressed: _pickDate,
                   icon: const Icon(Icons.calendar_today, size: 18),
                   label: Text(DateFormat('yyyy-MM-dd').format(_selectedDate)),
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 10,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                ElevatedButton.icon(
+                  onPressed: () =>
+                      _showAddAppointmentDialog(context, _selectedDate),
+                  icon: const Icon(Icons.add),
+                  label: const Text('Add Appointment'),
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 16,
@@ -229,6 +267,324 @@ class _AppointmentsCalendarPageState extends State<AppointmentsCalendarPage> {
           ],
         ),
       ),
+    );
+  }
+}
+
+void _showAddAppointmentDialog(BuildContext context, DateTime selectedDate) {
+  showDialog(
+    context: context,
+    builder: (context) => _AddAppointmentDialog(selectedDate: selectedDate),
+  );
+}
+
+class _AddAppointmentDialog extends StatefulWidget {
+  final DateTime selectedDate;
+  const _AddAppointmentDialog({Key? key, required this.selectedDate})
+    : super(key: key);
+  @override
+  State<_AddAppointmentDialog> createState() => _AddAppointmentDialogState();
+}
+
+class _AddAppointmentDialogState extends State<_AddAppointmentDialog> {
+  final _formKey = GlobalKey<FormState>();
+  int? _petId;
+  DateTime? _date;
+  TimeOfDay? _time;
+  String? _duration;
+  List<int> _serviceIds = [];
+
+  List<Patient> _pets = [];
+  List<Service> _services = [];
+  bool _loading = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchLookups();
+  }
+
+  Future<void> _fetchLookups() async {
+    setState(() {
+      _loading = true;
+    });
+    try {
+      final patientProvider = PatientProvider();
+      final serviceProvider = ServiceProvider();
+      final pets = await patientProvider.get();
+      final services = await serviceProvider.get();
+      setState(() {
+        _pets = pets.result;
+        _services = services.result;
+        _loading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _error = 'Failed to load options: ${e.toString()}';
+        _loading = false;
+      });
+    }
+  }
+
+  Future<void> _pickDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _date ?? DateTime.now(),
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2100),
+    );
+    if (picked != null) {
+      setState(() {
+        _date = picked;
+      });
+    }
+  }
+
+  Future<void> _pickTime() async {
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: _time ?? TimeOfDay.now(),
+    );
+    if (picked != null) {
+      setState(() {
+        _time = picked;
+      });
+    }
+  }
+
+  List<String> get _durationOptions {
+    List<String> options = [];
+    for (int min = 30; min <= 240; min += 30) {
+      options.add(min.toString()); // Store minutes as string
+    }
+    return options;
+  }
+
+  String _durationLabel(String minutesStr) {
+    final min = int.tryParse(minutesStr) ?? 0;
+    if (min == 30) return '30 min';
+    final h = min ~/ 60;
+    final m = min % 60;
+    if (m == 0) {
+      return ' $h hour${h > 1 ? 's' : ''}';
+    } else {
+      return ' $h hour${h > 1 ? 's' : ''} $m min';
+    }
+  }
+
+  String _durationToBackend(String minutesStr) {
+    final min = int.tryParse(minutesStr) ?? 0;
+    final h = (min ~/ 60).toString().padLeft(2, '0');
+    final m = (min % 60).toString().padLeft(2, '0');
+    return '$h:$m:00';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Add Appointment'),
+      content: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 400, maxHeight: 500),
+        child: _loading
+            ? const SizedBox(
+                height: 120,
+                child: Center(child: CircularProgressIndicator()),
+              )
+            : _error != null
+            ? SizedBox(height: 120, child: Center(child: Text(_error!)))
+            : SingleChildScrollView(
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Pet Dropdown
+                      DropdownButtonFormField<int>(
+                        value: _petId,
+                        decoration: const InputDecoration(labelText: 'Pet'),
+                        items: _pets.where((pet) => pet.petId != null).map((
+                          pet,
+                        ) {
+                          return DropdownMenuItem<int>(
+                            value: pet.petId!,
+                            child: Text(
+                              '${pet.name ?? ''} (${pet.ownerName ?? ''})',
+                            ),
+                          );
+                        }).toList(),
+                        onChanged: (val) => setState(() => _petId = val),
+                        validator: (val) =>
+                            val == null ? 'Pet is required' : null,
+                      ),
+                      // Date
+                      TextFormField(
+                        readOnly: true,
+                        decoration: const InputDecoration(labelText: 'Date'),
+                        controller: TextEditingController(
+                          text: _date == null
+                              ? ''
+                              : '${_date!.day.toString().padLeft(2, '0')}/${_date!.month.toString().padLeft(2, '0')}/${_date!.year}',
+                        ),
+                        onTap: _pickDate,
+                        validator: (value) =>
+                            _date == null ? 'Date is required' : null,
+                      ),
+                      // Time
+                      TextFormField(
+                        readOnly: true,
+                        decoration: const InputDecoration(labelText: 'Time'),
+                        controller: TextEditingController(
+                          text: _time == null ? '' : _time!.format(context),
+                        ),
+                        onTap: _pickTime,
+                        validator: (value) =>
+                            _time == null ? 'Time is required' : null,
+                      ),
+                      // Duration Dropdown
+                      DropdownButtonFormField<String>(
+                        value: _duration,
+                        decoration: const InputDecoration(
+                          labelText: 'Duration',
+                        ),
+                        items: _durationOptions
+                            .map(
+                              (d) => DropdownMenuItem(
+                                value: d,
+                                child: Text(_durationLabel(d)),
+                              ),
+                            )
+                            .toList(),
+                        onChanged: (val) => setState(() => _duration = val),
+                        validator: (val) =>
+                            val == null ? 'Duration is required' : null,
+                      ),
+                      // Services Multi-select
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: Padding(
+                          padding: const EdgeInsets.only(
+                            top: 16.0,
+                            bottom: 4.0,
+                          ),
+                          child: Text(
+                            'Services',
+                            style: TextStyle(fontWeight: FontWeight.w600),
+                          ),
+                        ),
+                      ),
+                      Wrap(
+                        spacing: 8,
+                        children: _services
+                            .where((service) => service.serviceId != null)
+                            .map((service) {
+                              final selected = _serviceIds.contains(
+                                service.serviceId,
+                              );
+                              return FilterChip(
+                                label: Text(service.name),
+                                selected: selected,
+                                onSelected: (isSelected) {
+                                  setState(() {
+                                    if (isSelected) {
+                                      _serviceIds.add(service.serviceId!);
+                                    } else {
+                                      _serviceIds.remove(service.serviceId!);
+                                    }
+                                  });
+                                },
+                              );
+                            })
+                            .toList(),
+                      ),
+                      if (_serviceIds.isEmpty)
+                        const Padding(
+                          padding: EdgeInsets.only(top: 4.0),
+                          child: Align(
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              'Select at least one service',
+                              style: TextStyle(color: Colors.red, fontSize: 12),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+        ElevatedButton(
+          onPressed: _loading
+              ? null
+              : () async {
+                  if (_formKey.currentState!.validate() &&
+                      _serviceIds.isNotEmpty) {
+                    setState(() {
+                      _loading = true;
+                    });
+                    final appointmentData = {
+                      'petId': _petId,
+                      'date': _date != null ? _date!.toIso8601String() : null,
+                      'time': _time != null ? _time!.format(context) : null,
+                      'duration': _duration != null
+                          ? _durationToBackend(_duration!)
+                          : null,
+                      'serviceIds': _serviceIds,
+                      'appointmentStatus': 2,
+                    };
+                    try {
+                      final response = await http.post(
+                        Uri.parse('http://localhost:5081/Appointments'),
+                        headers: createHeaders(),
+                        body: jsonEncode(appointmentData),
+                      );
+                      if (response.statusCode >= 200 &&
+                          response.statusCode < 300) {
+                        Navigator.of(context).pop();
+                        // Refresh calendar for the selected date
+                        final appointmentProvider =
+                            Provider.of<AppointmentProvider>(
+                              context,
+                              listen: false,
+                            );
+                        appointmentProvider.fetchAppointmentsForDate(
+                          widget.selectedDate,
+                        );
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              'Failed to add appointment: ${response.body}',
+                            ),
+                          ),
+                        );
+                      }
+                    } catch (e) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Error: ${e.toString()}')),
+                      );
+                    } finally {
+                      if (mounted)
+                        setState(() {
+                          _loading = false;
+                        });
+                    }
+                  }
+                },
+          child: _loading
+              ? const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Text('Submit'),
+        ),
+      ],
     );
   }
 }

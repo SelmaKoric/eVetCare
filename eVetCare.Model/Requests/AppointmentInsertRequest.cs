@@ -11,6 +11,8 @@ namespace eVetCare.Model.Requests
 
         public TimeSpan Time { get; set; }
 
+        public TimeSpan? Duration { get; set; }
+
         public List<int> ServiceIds { get; set; }
 
         public int? AppointmentStatus { get; set; }

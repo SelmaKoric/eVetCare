@@ -21,6 +21,8 @@ namespace eVetCare.Model
 
         public string Status { get; set; } = null!;
 
+        public TimeSpan? Duration { get; set; }
+
         public bool IsActive { get; set; }
 
     }
