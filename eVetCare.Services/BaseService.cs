@@ -1,12 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using eVetCare.Model;
+﻿using eVetCare.Model;
 using eVetCare.Model.SearchObjects;
 using eVetCare.Services.Database;
 using eVetCare.Services.Interfaces;
-using Mapster;
 using MapsterMapper;
-using Microsoft.EntityFrameworkCore;
 
 namespace eVetCare.Services
 {

@@ -3,6 +3,7 @@ import 'package:evetcare_admin/widgets/sidebar.dart';
 import 'package:flutter/material.dart';
 import 'package:evetcare_admin/pages/services_page.dart';
 import 'package:evetcare_admin/pages/appointments_calendar_page.dart';
+import 'package:evetcare_admin/pages/invoice_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -19,7 +20,7 @@ class _HomePageState extends State<HomePage> {
     AppointmentsCalendarPage(),
     Center(child: Text("Reports")),
     ServicesPage(),
-    Center(child: Text("Invoices")),
+    InvoicePage(), // Replaces Center(child: Text("Invoices"))
   ];
 
   final List<String> tabTitles = [
@@ -35,14 +36,17 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
       body: Row(
         children: [
-          Sidebar(
-            selectedIndex: selectedIndex,
-            onTabSelected: (index) {
-              setState(() {
-                selectedIndex = index;
-              });
-            },
-            tabs: tabTitles,
+          SizedBox(
+            width: 200,
+            child: Sidebar(
+              selectedIndex: selectedIndex,
+              onTabSelected: (index) {
+                setState(() {
+                  selectedIndex = index;
+                });
+              },
+              tabs: tabTitles,
+            ),
           ),
           Expanded(child: tabs[selectedIndex]),
         ],

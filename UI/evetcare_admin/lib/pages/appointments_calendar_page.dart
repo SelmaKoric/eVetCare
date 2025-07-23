@@ -29,9 +29,7 @@ class _AppointmentsCalendarPageState extends State<AppointmentsCalendarPage> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (_controller == null) {
-      _controller = CalendarControllerProvider.of(context).controller;
-    }
+    _controller ??= CalendarControllerProvider.of(context).controller;
   }
 
   @override
@@ -245,23 +243,17 @@ class _AppointmentsCalendarPageState extends State<AppointmentsCalendarPage> {
                           : event.title ?? '';
                       // Extract services from event (if available)
                       String servicesText = '';
-                      if (event is CalendarEventData &&
-                          event.event != null &&
-                          event.event is Appointment) {
+                      if (event.event != null && event.event is Appointment) {
                         final appt = event.event as Appointment;
                         final sn = appt.serviceNames;
-                        if (sn is List) {
-                          servicesText = sn
-                              .map(
-                                (s) => s is ServiceName
-                                    ? s.name
-                                    : (s is String ? s : ''),
-                              )
-                              .where((s) => s.toString().isNotEmpty)
-                              .join(', ');
-                        } else {
-                          servicesText = sn.toString();
-                        }
+                        servicesText = sn
+                            .map(
+                              (s) => s is ServiceName
+                                  ? s.name
+                                  : (s is String ? s : ''),
+                            )
+                            .where((s) => s.toString().isNotEmpty)
+                            .join(', ');
                       }
                       // Show services if available and not empty
                       final showServices = servicesText.isNotEmpty;
@@ -310,9 +302,8 @@ class _AppointmentsCalendarPageState extends State<AppointmentsCalendarPage> {
                     onEventTap: (events, date) {
                       print('onEventTap triggered!'); // Debug print
                       final event = events.first;
-                      print('Tapped event: ' + event.toString()); // Debug print
-                      if (event is CalendarEventData &&
-                          event.event is Appointment) {
+                      print('Tapped event: $event'); // Debug print
+                      if (event.event is Appointment) {
                         final appt = event.event as Appointment;
                         showDialog(
                           context: context,
@@ -343,8 +334,7 @@ void _showAddAppointmentDialog(BuildContext context, DateTime selectedDate) {
 
 class _AddAppointmentDialog extends StatefulWidget {
   final DateTime selectedDate;
-  const _AddAppointmentDialog({Key? key, required this.selectedDate})
-    : super(key: key);
+  const _AddAppointmentDialog({super.key, required this.selectedDate});
   @override
   State<_AddAppointmentDialog> createState() => _AddAppointmentDialogState();
 }
@@ -355,7 +345,7 @@ class _AddAppointmentDialogState extends State<_AddAppointmentDialog> {
   DateTime? _date;
   TimeOfDay? _time;
   String? _duration;
-  List<int> _serviceIds = [];
+  final List<int> _serviceIds = [];
 
   List<Patient> _pets = [];
   List<Service> _services = [];
@@ -550,9 +540,9 @@ class _AddAppointmentDialogState extends State<_AddAppointmentDialog> {
                                 onSelected: (isSelected) {
                                   setState(() {
                                     if (isSelected) {
-                                      _serviceIds.add(service.serviceId!);
+                                      _serviceIds.add(service.serviceId);
                                     } else {
-                                      _serviceIds.remove(service.serviceId!);
+                                      _serviceIds.remove(service.serviceId);
                                     }
                                   });
                                 },
@@ -607,7 +597,7 @@ class _AddAppointmentDialogState extends State<_AddAppointmentDialog> {
                     }
                     final appointmentData = {
                       'petId': _petId,
-                      'date': _date != null ? _date!.toIso8601String() : null,
+                      'date': _date?.toIso8601String(),
                       'time': formattedTime,
                       'duration': formattedDuration,
                       'serviceIds': _serviceIds,
@@ -646,10 +636,11 @@ class _AddAppointmentDialogState extends State<_AddAppointmentDialog> {
                         SnackBar(content: Text('Error:  {e.toString()}')),
                       );
                     } finally {
-                      if (mounted)
+                      if (mounted) {
                         setState(() {
                           _loading = false;
                         });
+                      }
                     }
                   }
                 },
@@ -670,10 +661,10 @@ class _EditAppointmentDialog extends StatefulWidget {
   final Appointment appointment;
   final DateTime selectedDate;
   const _EditAppointmentDialog({
-    Key? key,
+    super.key,
     required this.appointment,
     required this.selectedDate,
-  }) : super(key: key);
+  });
   @override
   State<_EditAppointmentDialog> createState() => _EditAppointmentDialogState();
 }
@@ -741,7 +732,6 @@ class _EditAppointmentDialogState extends State<_EditAppointmentDialog> {
                       categoryName: '',
                       price: 0.0,
                       durationMinutes: 0,
-                      isDeleted: false,
                     ),
                   );
                   return match.serviceId;
@@ -756,7 +746,6 @@ class _EditAppointmentDialogState extends State<_EditAppointmentDialog> {
                       categoryName: '',
                       price: 0.0,
                       durationMinutes: 0,
-                      isDeleted: false,
                     ),
                   );
                   return match.serviceId;
@@ -1037,12 +1026,13 @@ class _EditAppointmentDialogState extends State<_EditAppointmentDialog> {
                         SnackBar(content: Text('Error: \n${e.toString()}')),
                       );
                     } finally {
-                      if (mounted)
+                      if (mounted) {
                         Future.microtask(
                           () => setState(() {
                             _loading = false;
                           }),
                         );
+                      }
                     }
                   },
             child: _loading
@@ -1098,12 +1088,13 @@ class _EditAppointmentDialogState extends State<_EditAppointmentDialog> {
                         SnackBar(content: Text('Error: \n${e.toString()}')),
                       );
                     } finally {
-                      if (mounted)
+                      if (mounted) {
                         Future.microtask(
                           () => setState(() {
                             _loading = false;
                           }),
                         );
+                      }
                     }
                   },
             child: _loading
@@ -1158,12 +1149,13 @@ class _EditAppointmentDialogState extends State<_EditAppointmentDialog> {
                         SnackBar(content: Text('Error: \n${e.toString()}')),
                       );
                     } finally {
-                      if (mounted)
+                      if (mounted) {
                         Future.microtask(
                           () => setState(() {
                             _loading = false;
                           }),
                         );
+                      }
                     }
                   },
             child: _loading

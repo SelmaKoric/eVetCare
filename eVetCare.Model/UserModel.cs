@@ -23,8 +23,6 @@ namespace eVetCare.Model
 
         public virtual List<Pets> Pets { get; set; }
 
-        public bool? IsDeleted { get; set; }
-
     }
 }
 

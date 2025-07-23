@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../models/appointment.dart';
 import '../models/patient.dart';
 import '../providers/patient_provider.dart';
+import 'package:intl/intl.dart';
 
 class ViewAllAppointmentsPage extends StatefulWidget {
   final Patient patient;
@@ -39,6 +40,15 @@ class _ViewAllAppointmentsScreenState extends State<ViewAllAppointmentsPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Failed to load appointments: ${e.toString()}")),
       );
+    }
+  }
+
+  String _formatDate(String dateStr) {
+    try {
+      final date = DateTime.parse(dateStr);
+      return DateFormat('dd/MM/yyyy').format(date);
+    } catch (_) {
+      return dateStr;
     }
   }
 
@@ -97,7 +107,7 @@ class _ViewAllAppointmentsScreenState extends State<ViewAllAppointmentsPage> {
                     rows: _appointments.map((appointment) {
                       return DataRow(
                         cells: [
-                          DataCell(Text(appointment.date)),
+                          DataCell(Text(_formatDate(appointment.date))),
                           DataCell(Text(appointment.time)),
                           DataCell(
                             Text(

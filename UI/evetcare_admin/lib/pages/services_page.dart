@@ -278,13 +278,13 @@ class _ServicesPageState extends State<ServicesPage> {
                           DataCell(
                             Flexible(
                               child: Text(
-                                service.description,
+                                service.description ?? '',
                                 overflow: TextOverflow.ellipsis,
                                 maxLines: 2,
                               ),
                             ),
                           ),
-                          DataCell(Text(service.categoryName)),
+                          DataCell(Text(service.categoryName ?? '')),
                           DataCell(
                             Text(service.price?.toStringAsFixed(2) ?? '0.00'),
                           ),

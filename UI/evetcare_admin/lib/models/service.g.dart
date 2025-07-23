@@ -9,12 +9,12 @@ part of 'service.dart';
 Service _$ServiceFromJson(Map<String, dynamic> json) => Service(
   serviceId: (json['serviceId'] as num).toInt(),
   name: json['name'] as String,
-  description: json['description'] as String,
-  categoryId: (json['categoryId'] as num).toInt(),
-  categoryName: json['categoryName'] as String,
+  description: json['description'] as String?,
+  categoryId: (json['categoryId'] as num?)?.toInt(),
+  categoryName: json['categoryName'] as String? ?? '',
   price: (json['price'] as num?)?.toDouble(),
   durationMinutes: (json['durationMinutes'] as num?)?.toInt(),
-  isDeleted: json['isDeleted'] == true,
+  isActive: json['isActive'] as bool?,
 );
 
 Map<String, dynamic> _$ServiceToJson(Service instance) => <String, dynamic>{
@@ -25,5 +25,5 @@ Map<String, dynamic> _$ServiceToJson(Service instance) => <String, dynamic>{
   'categoryName': instance.categoryName,
   'price': instance.price,
   'durationMinutes': instance.durationMinutes,
-  'isDeleted': instance.isDeleted,
+  'isActive': instance.isActive,
 };

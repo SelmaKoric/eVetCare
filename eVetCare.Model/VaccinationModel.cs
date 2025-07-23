@@ -11,8 +11,6 @@ namespace eVetCare.Model
 
         public DateTime? NextDue { get; set; }
 
-        public bool? IsDeleted { get; set; }
-
     }
 }
 

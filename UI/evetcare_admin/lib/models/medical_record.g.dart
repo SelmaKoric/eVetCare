@@ -18,6 +18,15 @@ MedicalRecord _$MedicalRecordFromJson(Map<String, dynamic> json) =>
       diagnoses: (json['diagnoses'] as List<dynamic>)
           .map((e) => Diagnosis.fromJson(e as Map<String, dynamic>))
           .toList(),
+      treatments: (json['treatments'] as List<dynamic>)
+          .map((e) => Treatment.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      labResults: (json['labResults'] as List<dynamic>)
+          .map((e) => LabResult.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      vaccinations: (json['vaccinations'] as List<dynamic>)
+          .map((e) => Vaccination.fromJson(e as Map<String, dynamic>))
+          .toList(),
     );
 
 Map<String, dynamic> _$MedicalRecordToJson(MedicalRecord instance) =>
@@ -30,4 +39,7 @@ Map<String, dynamic> _$MedicalRecordToJson(MedicalRecord instance) =>
       'notes': instance.notes,
       'analysisProvided': instance.analysisProvided,
       'diagnoses': instance.diagnoses,
+      'treatments': instance.treatments,
+      'labResults': instance.labResults,
+      'vaccinations': instance.vaccinations,
     };

@@ -25,8 +25,6 @@ namespace eVetCare.Model
 
         public string? PhotoUrl { get; set; }
 
-        public bool? IsDeleted { get; set; }
-
     }
 }
 

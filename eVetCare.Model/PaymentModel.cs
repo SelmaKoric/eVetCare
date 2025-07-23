@@ -15,8 +15,6 @@ namespace eVetCare.Model
 
         public DateTime PaymentDate { get; set; }
 
-        public bool? IsDeleted { get; set; }
-
     }
 }
 

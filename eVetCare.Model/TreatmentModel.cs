@@ -7,8 +7,6 @@ namespace eVetCare.Model
 
         public string TreatmentDescription { get; set; } = null!;
 
-        public bool? IsDeleted { get; set; }
-
     }
 }
 

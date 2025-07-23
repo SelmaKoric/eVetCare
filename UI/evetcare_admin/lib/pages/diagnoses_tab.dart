@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:evetcare_admin/models/patient.dart';
 import 'package:evetcare_admin/models/medical_record.dart';
 import 'package:evetcare_admin/providers/medical_record_provider.dart';
+import 'package:intl/intl.dart';
 
 class DiagnosesTab extends StatefulWidget {
   final Patient patient;
@@ -18,7 +19,9 @@ class _DiagnosesTabState extends State<DiagnosesTab> {
   @override
   void initState() {
     super.initState();
-    _medicalRecordsFuture = MedicalRecordProvider().getMedicalRecordsByPetId(widget.patient.petId!);
+    _medicalRecordsFuture = MedicalRecordProvider().getMedicalRecordsByPetId(
+      widget.patient.petId!,
+    );
   }
 
   @override
@@ -51,14 +54,16 @@ class _DiagnosesTabState extends State<DiagnosesTab> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Date: ${record.date.toLocal().toString().split('T').first}',
+                      'Date: ${DateFormat('dd/MM/yyyy').format(record.date)}',
                       style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 8),
-                    ...record.diagnoses.map((d) => ListTile(
-                          leading: const Icon(Icons.medical_services_outlined),
-                          title: Text(d.description),
-                        )),
+                    ...record.diagnoses.map(
+                      (d) => ListTile(
+                        leading: const Icon(Icons.medical_services_outlined),
+                        title: Text(d.description),
+                      ),
+                    ),
                   ],
                 ),
               ),

@@ -26,8 +26,7 @@ namespace eVetCare.Model
         public List<LabResult> LabResults { get; set; }
 
         public List<Vaccination> Vaccinations { get; set; }
-
-        public bool? IsDeleted { get; set; }
+        public bool IsActive { get; set; }
 
     }
 }

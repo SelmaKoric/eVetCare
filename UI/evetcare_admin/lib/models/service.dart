@@ -6,22 +6,23 @@ part 'service.g.dart';
 class Service {
   final int serviceId;
   final String name;
-  final String description;
-  final int categoryId;
-  final String categoryName;
+  final String? description;
+  final int? categoryId;
+  @JsonKey(defaultValue: '')
+  final String? categoryName;
   final double? price;
   final int? durationMinutes;
-  final bool isDeleted;
+  final bool? isActive;
 
   Service({
     required this.serviceId,
     required this.name,
-    required this.description,
-    required this.categoryId,
-    required this.categoryName,
+    this.description,
+    this.categoryId,
+    this.categoryName,
     this.price,
     this.durationMinutes,
-    required this.isDeleted,
+    this.isActive,
   });
 
   factory Service.fromJson(Map<String, dynamic> json) =>

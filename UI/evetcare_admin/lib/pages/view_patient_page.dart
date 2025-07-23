@@ -6,6 +6,7 @@ import 'package:evetcare_admin/pages/view_all_appointments_page.dart';
 import 'package:evetcare_admin/providers/patient_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:intl/intl.dart';
 
 class ViewPatientPage extends StatefulWidget {
   final Patient patient;
@@ -345,7 +346,7 @@ class _ViewPatientScreenState extends State<ViewPatientPage> {
         rows: appointmentsToShow.map((appointment) {
           return DataRow(
             cells: [
-              DataCell(Text(appointment.date)),
+              DataCell(Text(_formatDate(appointment.date))),
               DataCell(Text(appointment.time)),
               DataCell(
                 Text(
@@ -359,5 +360,14 @@ class _ViewPatientScreenState extends State<ViewPatientPage> {
         }).toList(),
       ),
     );
+  }
+
+  String _formatDate(String dateStr) {
+    try {
+      final date = DateTime.parse(dateStr);
+      return DateFormat('dd/MM/yyyy').format(date);
+    } catch (_) {
+      return dateStr;
+    }
   }
 }

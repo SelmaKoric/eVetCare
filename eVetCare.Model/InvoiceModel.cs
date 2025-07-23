@@ -15,8 +15,6 @@ namespace eVetCare.Model
 
         public List<InvoiceItem> InvoiceItems { get; set; }
 
-        public bool? IsDeleted { get; set; }
-
     }
 }
 

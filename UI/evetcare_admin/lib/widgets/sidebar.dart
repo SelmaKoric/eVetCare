@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 class Sidebar extends StatefulWidget {
   final int selectedIndex;
   final List<String> tabs;
-  final Function(int) onTabSelected;
+  final ValueChanged<int> onTabSelected;
 
   const Sidebar({
     super.key,
@@ -53,8 +53,11 @@ class _SidebarState extends State<Sidebar> {
             ),
           ),
           const Divider(),
-          Expanded(
+          Flexible(
+            fit: FlexFit.loose,
             child: ListView.builder(
+              shrinkWrap: true,
+              physics: NeverScrollableScrollPhysics(),
               itemCount: widget.tabs.length,
               itemBuilder: (context, index) {
                 final isSelected = widget.selectedIndex == index;

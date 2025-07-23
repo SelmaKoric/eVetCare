@@ -15,8 +15,6 @@ namespace eVetCare.Model
 
         public string? ReferenceRange { get; set; }
 
-        public bool? IsDeleted { get; set; }
-
     }
 }
 
