@@ -10,6 +10,7 @@ import '../models/service.dart';
 import 'dart:convert'; // Added for jsonEncode
 import 'package:http/http.dart' as http; // Added for http
 import '../core/auth_utils.dart'; // For createHeaders
+import '../utils/authorization.dart'; // For Authorization.token
 
 class AppointmentsCalendarPage extends StatefulWidget {
   const AppointmentsCalendarPage({super.key});
@@ -607,7 +608,11 @@ class _AddAppointmentDialogState extends State<_AddAppointmentDialog> {
                     try {
                       final response = await http.post(
                         Uri.parse('http://localhost:5081/Appointments'),
-                        headers: createHeaders(),
+                        headers: {
+                          'Content-Type': 'application/json',
+                          'Authorization': 'Bearer ${Authorization.token}',
+                          'accept': 'text/plain',
+                        },
                         body: jsonEncode(appointmentData),
                       );
                       if (response.statusCode >= 200 &&
@@ -815,8 +820,13 @@ class _EditAppointmentDialogState extends State<_EditAppointmentDialog> {
 
   @override
   Widget build(BuildContext context) {
+    print('=== BUILDING EDIT DIALOG ===');
+    print('_status: "$_status"');
+    print('widget.appointment.status: "${widget.appointment.status}"');
     final isPending = _status == 'pending';
     final isApproved = _status == 'approved';
+    print('isPending: $isPending');
+    print('isApproved: $isApproved');
     return AlertDialog(
       title: const Text('Edit Appointment'),
       content: ConstrainedBox(
@@ -988,6 +998,18 @@ class _EditAppointmentDialogState extends State<_EditAppointmentDialog> {
             onPressed: _loading
                 ? null
                 : () async {
+                    print('=== REJECT BUTTON PRESSED ===');
+                    print(
+                      'Appointment ID: ${widget.appointment.appointmentId}',
+                    );
+                    print('Appointment Status: ${widget.appointment.status}');
+                    print(
+                      'Is Pending: ${widget.appointment.status.toLowerCase() == 'pending'}',
+                    );
+                    print(
+                      'Token: ${Authorization.token != null ? 'Present' : 'Missing'}',
+                    );
+
                     setState(() {
                       _loading = true;
                     });
@@ -995,9 +1017,18 @@ class _EditAppointmentDialogState extends State<_EditAppointmentDialog> {
                       final url =
                           'http://localhost:5081/Appointments/${widget.appointment.appointmentId}/reject';
                       print('Rejecting appointment: $url');
+                      print(
+                        'Request headers: ${{'Content-Type': 'application/json', 'Authorization': 'Bearer ${Authorization.token}', 'accept': 'text/plain'}}',
+                      );
+
                       final response = await http.put(
                         Uri.parse(url),
-                        headers: createHeaders(),
+                        headers: {
+                          'Content-Type': 'application/json',
+                          'Authorization': 'Bearer ${Authorization.token}',
+                          'accept': 'text/plain',
+                        },
+                        body: jsonEncode({}),
                       );
                       print('Reject response status: ${response.statusCode}');
                       print('Reject response body: ${response.body}');
@@ -1051,6 +1082,15 @@ class _EditAppointmentDialogState extends State<_EditAppointmentDialog> {
             onPressed: _loading
                 ? null
                 : () async {
+                    print('=== APPROVE BUTTON PRESSED ===');
+                    print(
+                      'Appointment ID: ${widget.appointment.appointmentId}',
+                    );
+                    print('Appointment Status: ${widget.appointment.status}');
+                    print(
+                      'Token: ${Authorization.token != null ? 'Present' : 'Missing'}',
+                    );
+
                     setState(() {
                       _loading = true;
                     });
@@ -1059,7 +1099,12 @@ class _EditAppointmentDialogState extends State<_EditAppointmentDialog> {
                         Uri.parse(
                           'http://localhost:5081/Appointments/${widget.appointment.appointmentId}/approve',
                         ),
-                        headers: createHeaders(),
+                        headers: {
+                          'Content-Type': 'application/json',
+                          'Authorization': 'Bearer ${Authorization.token}',
+                          'accept': 'text/plain',
+                        },
+                        body: jsonEncode({}),
                       );
                       print('Approve response status: ${response.statusCode}');
                       print('Approve response body: ${response.body}');
@@ -1104,67 +1149,6 @@ class _EditAppointmentDialogState extends State<_EditAppointmentDialog> {
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
                 : const Text('Approve'),
-          ),
-        ] else if (isApproved) ...[
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-              foregroundColor: Colors.white,
-            ),
-            onPressed: _loading
-                ? null
-                : () async {
-                    setState(() {
-                      _loading = true;
-                    });
-                    try {
-                      final response = await http.post(
-                        Uri.parse(
-                          'http://localhost:5081/Appointments/${widget.appointment.appointmentId}/reject',
-                        ),
-                        headers: createHeaders(),
-                      );
-                      if (response.statusCode >= 200 &&
-                          response.statusCode < 300) {
-                        Navigator.of(context).pop();
-                        final appointmentProvider =
-                            Provider.of<AppointmentProvider>(
-                              context,
-                              listen: false,
-                            );
-                        appointmentProvider.fetchAppointmentsForDate(
-                          widget.selectedDate,
-                        );
-                      } else {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              'Failed to reject appointment: \n${response.body}',
-                            ),
-                          ),
-                        );
-                      }
-                    } catch (e) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Error: \n${e.toString()}')),
-                      );
-                    } finally {
-                      if (mounted) {
-                        Future.microtask(
-                          () => setState(() {
-                            _loading = false;
-                          }),
-                        );
-                      }
-                    }
-                  },
-            child: _loading
-                ? const SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Text('Reject'),
           ),
         ],
       ],

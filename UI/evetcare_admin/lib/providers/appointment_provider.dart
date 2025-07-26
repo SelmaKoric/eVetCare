@@ -103,4 +103,36 @@ class AppointmentProvider extends ChangeNotifier {
     _loading = false;
     notifyListeners();
   }
+
+  Future<void> fetchAllAppointments() async {
+    _loading = true;
+    notifyListeners();
+    final url = Uri.parse('http://localhost:5081/Appointments');
+    print('[AppointmentProvider] Fetching all appointments: $url');
+    final response = await http.get(
+      url,
+      headers: {
+        'Authorization': 'Bearer ${Authorization.token}',
+        'Content-Type': 'application/json',
+        'accept': 'text/plain',
+      },
+    );
+    print('[AppointmentProvider] Status: ${response.statusCode}');
+    print('[AppointmentProvider] Body: ${response.body}');
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      print('[AppointmentProvider] Decoded data: $data');
+      final List<dynamic> result = data['result'] ?? [];
+      print('[AppointmentProvider] result: $result');
+      _appointments = result.map((e) => Appointment.fromJson(e)).toList();
+      print(
+        '[AppointmentProvider] Parsed appointments: ${_appointments.length}',
+      );
+    } else {
+      print('[AppointmentProvider] Error: No appointments loaded');
+      _appointments = [];
+    }
+    _loading = false;
+    notifyListeners();
+  }
 }

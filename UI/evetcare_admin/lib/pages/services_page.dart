@@ -109,7 +109,12 @@ class _ServicesPageState extends State<ServicesPage> {
         children: [
           _buildSearch(),
           Expanded(
-            child: Column(children: [_buildTable(), _buildPagination()]),
+            child: Column(
+              children: [
+                Expanded(child: _buildTable()),
+                _buildPagination(),
+              ],
+            ),
           ),
         ],
       ),
@@ -234,182 +239,170 @@ class _ServicesPageState extends State<ServicesPage> {
   }
 
   Widget _buildTable() {
-    return Expanded(
-      child: FutureBuilder<SearchResult<Service>>(
-        future: _futureServices,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          } else if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
-          } else if (!snapshot.hasData || snapshot.data!.result.isEmpty) {
-            return const Center(child: Text('No services found.'));
-          }
-          final services = snapshot.data!.result;
-          return Column(
-            children: [
-              Align(
-                alignment: Alignment.topLeft,
-                child: SizedBox(
-                  width: double.infinity,
-                  child: DataTable(
-                    columnSpacing: 12,
-                    horizontalMargin: 8,
-                    columns: const [
-                      DataColumn(label: Text('Name')),
-                      DataColumn(label: Text('Description')),
-                      DataColumn(label: Text('Category')),
-                      DataColumn(label: Text('Price')),
-                      DataColumn(label: Text('Duration')),
-                      DataColumn(label: Text('Actions')),
-                    ],
-                    rows: services.map((service) {
-                      return DataRow(
-                        cells: [
-                          DataCell(
-                            Flexible(
-                              child: Text(
-                                service.name,
-                                overflow: TextOverflow.ellipsis,
-                                maxLines: 2,
-                              ),
-                            ),
-                          ),
-                          DataCell(
-                            Flexible(
-                              child: Text(
-                                service.description ?? '',
-                                overflow: TextOverflow.ellipsis,
-                                maxLines: 2,
-                              ),
-                            ),
-                          ),
-                          DataCell(Text(service.categoryName ?? '')),
-                          DataCell(
-                            Text(service.price?.toStringAsFixed(2) ?? '0.00'),
-                          ),
-                          DataCell(
-                            Text(
-                              service.durationMinutes == null ||
-                                      service.durationMinutes == 0
-                                  ? '—'
-                                  : service.durationMinutes! % 60 == 0
-                                  ? '${(service.durationMinutes! / 60).round()}h'
-                                  : '${service.durationMinutes}m',
-                            ),
-                          ),
-                          DataCell(
-                            Row(
-                              children: [
-                                ElevatedButton(
-                                  onPressed: () async {
-                                    final result = await showDialog<bool>(
-                                      context: context,
-                                      builder: (context) => EditServiceDialog(
-                                        service: service,
-                                        categories: _categories,
-                                      ),
-                                    );
-                                    if (result == true) {
-                                      _fetchServices();
-                                    }
-                                  },
-                                  style: ElevatedButton.styleFrom(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 8,
-                                      vertical: 6,
-                                    ),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(20),
-                                    ),
-                                    backgroundColor: const Color(0xFF5AB7E2),
-                                    foregroundColor: Colors.white,
-                                  ),
-                                  child: const Text("Edit"),
+    return FutureBuilder<SearchResult<Service>>(
+      future: _futureServices,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        } else if (snapshot.hasError) {
+          return Center(child: Text('Error: ${snapshot.error}'));
+        } else if (!snapshot.hasData || snapshot.data!.result.isEmpty) {
+          return const Center(child: Text('No services found.'));
+        }
+        final services = snapshot.data!.result;
+        return SingleChildScrollView(
+          scrollDirection: Axis.vertical,
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: DataTable(
+              columnSpacing: 12,
+              horizontalMargin: 8,
+              columns: const [
+                DataColumn(label: Text('Name')),
+                DataColumn(label: Text('Description')),
+                DataColumn(label: Text('Category')),
+                DataColumn(label: Text('Price')),
+                DataColumn(label: Text('Duration')),
+                DataColumn(label: Text('Actions')),
+              ],
+              rows: services.map((service) {
+                return DataRow(
+                  cells: [
+                    DataCell(
+                      Flexible(
+                        child: Text(
+                          service.name,
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 2,
+                        ),
+                      ),
+                    ),
+                    DataCell(
+                      Flexible(
+                        child: Text(
+                          service.description ?? '',
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 2,
+                        ),
+                      ),
+                    ),
+                    DataCell(Text(service.categoryName ?? '')),
+                    DataCell(Text(service.price?.toStringAsFixed(2) ?? '0.00')),
+                    DataCell(
+                      Text(
+                        service.durationMinutes == null ||
+                                service.durationMinutes == 0
+                            ? '—'
+                            : service.durationMinutes! % 60 == 0
+                            ? '${(service.durationMinutes! / 60).round()}h'
+                            : '${service.durationMinutes}m',
+                      ),
+                    ),
+                    DataCell(
+                      Row(
+                        children: [
+                          ElevatedButton(
+                            onPressed: () async {
+                              final result = await showDialog<bool>(
+                                context: context,
+                                builder: (context) => EditServiceDialog(
+                                  service: service,
+                                  categories: _categories,
                                 ),
-                                const SizedBox(width: 8),
-                                ElevatedButton(
-                                  onPressed: () async {
-                                    final confirm = await showDialog<bool>(
-                                      context: context,
-                                      builder: (context) => AlertDialog(
-                                        title: const Text('Confirm Delete'),
-                                        content: const Text(
-                                          'Are you sure you want to delete this service?',
-                                        ),
-                                        actions: [
-                                          TextButton(
-                                            onPressed: () => Navigator.of(
-                                              context,
-                                            ).pop(false),
-                                            child: const Text('Cancel'),
-                                          ),
-                                          TextButton(
-                                            onPressed: () =>
-                                                Navigator.of(context).pop(true),
-                                            child: const Text(
-                                              'Delete',
-                                              style: TextStyle(
-                                                color: Colors.red,
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    );
-                                    if (confirm == true) {
-                                      final token = Authorization.token;
-                                      await http.put(
-                                        Uri.parse(
-                                          'http://localhost:5081/Services/${service.serviceId}',
-                                        ),
-                                        headers: {
-                                          'Content-Type': 'application/json',
-                                          'Authorization': 'Bearer $token',
-                                          'accept': 'text/plain',
-                                        },
-                                        body: jsonEncode({
-                                          'serviceId': service.serviceId,
-                                          'name': service.name,
-                                          'description': service.description,
-                                          'categoryId': service.categoryId,
-                                          'categoryName': service.categoryName,
-                                          'price': service.price ?? 0.0,
-                                          'durationMinutes':
-                                              service.durationMinutes ?? 0,
-                                          'isActive': false,
-                                        }),
-                                      );
-                                      _fetchServices();
-                                    }
-                                  },
-                                  style: ElevatedButton.styleFrom(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 8,
-                                      vertical: 6,
-                                    ),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(20),
-                                    ),
-                                    backgroundColor: Colors.red.shade400,
-                                    foregroundColor: Colors.white,
-                                  ),
-                                  child: const Text("Delete"),
-                                ),
-                              ],
+                              );
+                              if (result == true) {
+                                _fetchServices();
+                              }
+                            },
+                            style: ElevatedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 6,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              backgroundColor: const Color(0xFF5AB7E2),
+                              foregroundColor: Colors.white,
                             ),
+                            child: const Text("Edit"),
+                          ),
+                          const SizedBox(width: 8),
+                          ElevatedButton(
+                            onPressed: () async {
+                              final confirm = await showDialog<bool>(
+                                context: context,
+                                builder: (context) => AlertDialog(
+                                  title: const Text('Confirm Delete'),
+                                  content: const Text(
+                                    'Are you sure you want to delete this service?',
+                                  ),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () =>
+                                          Navigator.of(context).pop(false),
+                                      child: const Text('Cancel'),
+                                    ),
+                                    TextButton(
+                                      onPressed: () =>
+                                          Navigator.of(context).pop(true),
+                                      child: const Text(
+                                        'Delete',
+                                        style: TextStyle(color: Colors.red),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                              if (confirm == true) {
+                                final token = Authorization.token;
+                                await http.put(
+                                  Uri.parse(
+                                    'http://localhost:5081/Services/${service.serviceId}',
+                                  ),
+                                  headers: {
+                                    'Content-Type': 'application/json',
+                                    'Authorization': 'Bearer $token',
+                                    'accept': 'text/plain',
+                                  },
+                                  body: jsonEncode({
+                                    'serviceId': service.serviceId,
+                                    'name': service.name,
+                                    'description': service.description,
+                                    'categoryId': service.categoryId,
+                                    'categoryName': service.categoryName,
+                                    'price': service.price ?? 0.0,
+                                    'durationMinutes':
+                                        service.durationMinutes ?? 0,
+                                    'isActive': false,
+                                  }),
+                                );
+                                _fetchServices();
+                              }
+                            },
+                            style: ElevatedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 6,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              backgroundColor: Colors.red.shade400,
+                              foregroundColor: Colors.white,
+                            ),
+                            child: const Text("Delete"),
                           ),
                         ],
-                      );
-                    }).toList(),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 24),
-            ],
-          );
-        },
-      ),
+                      ),
+                    ),
+                  ],
+                );
+              }).toList(),
+            ),
+          ),
+        );
+      },
     );
   }
 

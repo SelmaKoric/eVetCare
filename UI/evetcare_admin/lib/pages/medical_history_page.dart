@@ -141,7 +141,7 @@ class _MedicalHistoryTabList<E> extends StatelessWidget {
           return const Center(child: CircularProgressIndicator());
         }
         if (snapshot.hasError) {
-          return Center(child: Text('Error: \\${snapshot.error}'));
+          return Center(child: Text('Error: ${snapshot.error}'));
         }
         final records = snapshot.data ?? [];
         final items = records.expand(extract).toList();
