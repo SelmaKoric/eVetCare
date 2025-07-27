@@ -104,137 +104,138 @@ class _ServicesPageState extends State<ServicesPage> {
   Widget build(BuildContext context) {
     return ChangeNotifierProvider.value(
       value: _serviceProvider,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          _buildSearch(),
-          Expanded(
-            child: Column(
-              children: [
-                Expanded(child: _buildTable()),
-                _buildPagination(),
-              ],
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _buildSearch(),
+            const SizedBox(height: 16),
+            Expanded(
+              child: Column(
+                children: [
+                  Expanded(child: _buildTable()),
+                  _buildPagination(),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildSearch() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Text(
-                "Services",
-                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-              ),
-              const Spacer(),
-              SizedBox(
-                width: 180,
-                child: _loadingCategories
-                    ? Row(
-                        children: [
-                          const Expanded(child: Text('All Categories')),
-                          const SizedBox(width: 8),
-                          const SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const Text(
+              "Services",
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+            ),
+            const Spacer(),
+            SizedBox(
+              width: 180,
+              child: _loadingCategories
+                  ? Row(
+                      children: [
+                        const Expanded(child: Text('All Categories')),
+                        const SizedBox(width: 8),
+                        const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                      ],
+                    )
+                  : DropdownButton<ServiceCategory?>(
+                      isExpanded: true,
+                      value: _selectedCategory,
+                      hint: const Text('All Categories'),
+                      items: [
+                        const DropdownMenuItem<ServiceCategory?>(
+                          value: null,
+                          child: Text('All Categories'),
+                        ),
+                        ..._categories.map(
+                          (cat) => DropdownMenuItem<ServiceCategory?>(
+                            value: cat,
+                            child: Text(cat.name),
                           ),
-                        ],
-                      )
-                    : DropdownButton<ServiceCategory?>(
-                        isExpanded: true,
-                        value: _selectedCategory,
-                        hint: const Text('All Categories'),
-                        items: [
-                          const DropdownMenuItem<ServiceCategory?>(
-                            value: null,
-                            child: Text('All Categories'),
-                          ),
-                          ..._categories.map(
-                            (cat) => DropdownMenuItem<ServiceCategory?>(
-                              value: cat,
-                              child: Text(cat.name),
-                            ),
-                          ),
-                        ],
-                        onChanged: _onCategoryChanged,
-                      ),
-              ),
-              const SizedBox(width: 12),
-              SizedBox(
-                width: 250,
-                child: TextField(
-                  controller: _searchController,
-                  onSubmitted: (_) => _onSearch(),
-                  style: const TextStyle(fontSize: 14),
-                  decoration: InputDecoration(
-                    hintText: 'Search services...',
-                    prefixIcon: const Icon(Icons.search),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
+                        ),
+                      ],
+                      onChanged: _onCategoryChanged,
                     ),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(30),
-                      borderSide: BorderSide.none,
-                    ),
-                    filled: true,
-                    fillColor: Colors.grey[200],
+            ),
+            const SizedBox(width: 12),
+            SizedBox(
+              width: 250,
+              child: TextField(
+                controller: _searchController,
+                onSubmitted: (_) => _onSearch(),
+                style: const TextStyle(fontSize: 14),
+                decoration: InputDecoration(
+                  hintText: 'Search services...',
+                  prefixIcon: const Icon(Icons.search),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
                   ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              OutlinedButton(
-                onPressed: _clearFilters,
-                style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 18,
-                    vertical: 14,
-                  ),
-                  shape: RoundedRectangleBorder(
+                  border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(30),
+                    borderSide: BorderSide.none,
                   ),
-                ),
-                child: const Text('Clear'),
-              ),
-              const SizedBox(width: 8),
-              ElevatedButton.icon(
-                onPressed: () async {
-                  final result = await showDialog<bool>(
-                    context: context,
-                    builder: (context) => AddServiceDialog(),
-                  );
-                  if (result == true) {
-                    _fetchServices();
-                  }
-                },
-                icon: const Icon(Icons.add),
-                label: const Text("Add Service"),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF5AB7E2),
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 14,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30),
-                  ),
+                  filled: true,
+                  fillColor: Colors.grey[200],
                 ),
               ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          const Divider(thickness: 1.2),
-        ],
-      ),
+            ),
+            const SizedBox(width: 12),
+            OutlinedButton(
+              onPressed: _clearFilters,
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 18,
+                  vertical: 14,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(30),
+                ),
+              ),
+              child: const Text('Clear'),
+            ),
+            const SizedBox(width: 8),
+            ElevatedButton.icon(
+              onPressed: () async {
+                final result = await showDialog<bool>(
+                  context: context,
+                  builder: (context) => AddServiceDialog(),
+                );
+                if (result == true) {
+                  _fetchServices();
+                }
+              },
+              icon: const Icon(Icons.add),
+              label: const Text("Add Service"),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF5AB7E2),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 14,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(30),
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        const Divider(thickness: 1.2),
+      ],
     );
   }
 
@@ -251,43 +252,96 @@ class _ServicesPageState extends State<ServicesPage> {
         }
         final services = snapshot.data!.result;
         return SingleChildScrollView(
-          scrollDirection: Axis.vertical,
-          child: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
+          scrollDirection: Axis.horizontal,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              minWidth:
+                  MediaQuery.of(context).size.width - 64, // Account for padding
+            ),
             child: DataTable(
-              columnSpacing: 12,
-              horizontalMargin: 8,
+              columnSpacing: 32,
+              horizontalMargin: 24,
+              headingRowHeight: 56,
               columns: const [
-                DataColumn(label: Text('Name')),
-                DataColumn(label: Text('Description')),
-                DataColumn(label: Text('Category')),
-                DataColumn(label: Text('Price')),
-                DataColumn(label: Text('Duration')),
-                DataColumn(label: Text('Actions')),
+                DataColumn(
+                  label: Text(
+                    'Name',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ),
+                DataColumn(
+                  label: Text(
+                    'Description',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ),
+                DataColumn(
+                  label: Text(
+                    'Category',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ),
+                DataColumn(
+                  label: Text(
+                    'Price',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ),
+                DataColumn(
+                  label: Text(
+                    'Duration',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ),
+                DataColumn(
+                  label: Text(
+                    'Actions',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ),
               ],
               rows: services.map((service) {
                 return DataRow(
                   cells: [
                     DataCell(
-                      Flexible(
+                      Container(
+                        constraints: const BoxConstraints(maxWidth: 200),
                         child: Text(
                           service.name,
                           overflow: TextOverflow.ellipsis,
                           maxLines: 2,
+                          style: const TextStyle(fontWeight: FontWeight.w500),
                         ),
                       ),
                     ),
                     DataCell(
-                      Flexible(
+                      Container(
+                        constraints: const BoxConstraints(maxWidth: 300),
                         child: Text(
                           service.description ?? '',
                           overflow: TextOverflow.ellipsis,
-                          maxLines: 2,
+                          maxLines: 3,
                         ),
                       ),
                     ),
-                    DataCell(Text(service.categoryName ?? '')),
-                    DataCell(Text(service.price?.toStringAsFixed(2) ?? '0.00')),
+                    DataCell(
+                      Container(
+                        constraints: const BoxConstraints(maxWidth: 150),
+                        child: Text(
+                          service.categoryName ?? '',
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ),
+                    DataCell(
+                      Text(
+                        '\$${service.price?.toStringAsFixed(2) ?? '0.00'}',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.green,
+                        ),
+                      ),
+                    ),
                     DataCell(
                       Text(
                         service.durationMinutes == null ||
@@ -300,6 +354,7 @@ class _ServicesPageState extends State<ServicesPage> {
                     ),
                     DataCell(
                       Row(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
                           ElevatedButton(
                             onPressed: () async {
@@ -316,8 +371,8 @@ class _ServicesPageState extends State<ServicesPage> {
                             },
                             style: ElevatedButton.styleFrom(
                               padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 6,
+                                horizontal: 12,
+                                vertical: 8,
                               ),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(20),
@@ -382,8 +437,8 @@ class _ServicesPageState extends State<ServicesPage> {
                             },
                             style: ElevatedButton.styleFrom(
                               padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 6,
+                                horizontal: 12,
+                                vertical: 8,
                               ),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(20),
@@ -449,15 +504,15 @@ class _ServicesPageState extends State<ServicesPage> {
                   child: TextButton(
                     onPressed: () => _onPageChanged(i),
                     style: ButtonStyle(
-                      backgroundColor: WidgetStateProperty.resolveWith<Color>((
-                        Set<WidgetState> states,
-                      ) {
-                        if (i == _page) {
-                          return const Color(0xFF5AB7E2).withOpacity(0.2);
-                        }
-                        return Colors.transparent;
-                      }),
-                      shape: WidgetStateProperty.all<RoundedRectangleBorder>(
+                      backgroundColor: MaterialStateProperty.resolveWith<Color>(
+                        (Set<MaterialState> states) {
+                          if (i == _page) {
+                            return const Color(0xFF5AB7E2).withOpacity(0.2);
+                          }
+                          return Colors.transparent;
+                        },
+                      ),
+                      shape: MaterialStateProperty.all<RoundedRectangleBorder>(
                         RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(4.0),
                           side: i == _page

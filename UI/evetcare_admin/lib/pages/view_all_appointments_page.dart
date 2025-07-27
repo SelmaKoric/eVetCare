@@ -64,119 +64,111 @@ class _ViewAllAppointmentsScreenState extends State<ViewAllAppointmentsPage> {
           ? const Center(child: CircularProgressIndicator())
           : _appointments.isEmpty
           ? const Center(child: Text("No appointments found."))
-          : SingleChildScrollView(
+          : Padding(
               padding: const EdgeInsets.all(20),
-              scrollDirection: Axis.vertical,
               child: SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(
-                    minWidth: MediaQuery.of(context).size.width,
-                  ),
-                  child: DataTable(
-                    columnSpacing: 24,
-                    horizontalMargin: 16,
-                    headingRowHeight: 56,
-                    dataRowMinHeight: 48,
-                    columns: const [
-                      DataColumn(
-                        label: Text(
-                          "Date",
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
+                child: DataTable(
+                  columnSpacing: 24,
+                  horizontalMargin: 16,
+                  headingRowHeight: 56,
+                  dataRowMinHeight: 48,
+                  columns: const [
+                    DataColumn(
+                      label: Text(
+                        "Date",
+                        style: TextStyle(fontWeight: FontWeight.bold),
                       ),
-                      DataColumn(
-                        label: Text(
-                          "Time",
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
+                    ),
+                    DataColumn(
+                      label: Text(
+                        "Time",
+                        style: TextStyle(fontWeight: FontWeight.bold),
                       ),
-                      DataColumn(
-                        label: Text(
-                          "Services",
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
+                    ),
+                    DataColumn(
+                      label: Text(
+                        "Services",
+                        style: TextStyle(fontWeight: FontWeight.bold),
                       ),
-                      DataColumn(
-                        label: Text(
-                          "Status",
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
+                    ),
+                    DataColumn(
+                      label: Text(
+                        "Status",
+                        style: TextStyle(fontWeight: FontWeight.bold),
                       ),
-                    ],
-                    rows: _appointments.map((appointment) {
-                      return DataRow(
-                        cells: [
-                          DataCell(Text(_formatDate(appointment.date))),
-                          DataCell(Text(appointment.time)),
-                          DataCell(
-                            Text(
-                              appointment.serviceNames.isNotEmpty
-                                  ? appointment.serviceNames
-                                  : "N/A",
-                              overflow: TextOverflow.ellipsis,
-                              maxLines: 2,
-                            ),
+                    ),
+                  ],
+                  rows: _appointments.map((appointment) {
+                    return DataRow(
+                      cells: [
+                        DataCell(Text(_formatDate(appointment.date))),
+                        DataCell(Text(appointment.time)),
+                        DataCell(
+                          Text(
+                            appointment.serviceNames.isNotEmpty
+                                ? appointment.serviceNames
+                                : "N/A",
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 2,
                           ),
-                          DataCell(
-                            Row(
-                              children: [
-                                Text(appointment.status ?? "N/A"),
-                                const SizedBox(width: 4),
-                                PopupMenuButton<String>(
-                                  onSelected: (action) async {
-                                    try {
-                                      await Provider.of<PatientProvider>(
-                                        context,
-                                        listen: false,
-                                      ).updateAppointmentStatus(
-                                        appointment.appointmentId,
-                                        action,
-                                      );
-                                      await _loadAppointments();
-                                    } catch (e) {
-                                      ScaffoldMessenger.of(
-                                        context,
-                                      ).showSnackBar(
-                                        SnackBar(
-                                          content: Text(
-                                            'Failed to update: ${e.toString()}',
-                                          ),
+                        ),
+                        DataCell(
+                          Row(
+                            children: [
+                              Text(appointment.status ?? "N/A"),
+                              const SizedBox(width: 4),
+                              PopupMenuButton<String>(
+                                onSelected: (action) async {
+                                  try {
+                                    await Provider.of<PatientProvider>(
+                                      context,
+                                      listen: false,
+                                    ).updateAppointmentStatus(
+                                      appointment.appointmentId,
+                                      action,
+                                    );
+                                    await _loadAppointments();
+                                  } catch (e) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(
+                                          'Failed to update: ${e.toString()}',
                                         ),
-                                      );
-                                    }
-                                  },
-                                  itemBuilder: (context) => [
-                                    const PopupMenuItem(
-                                      value: 'approve',
-                                      child: Text("Approve"),
-                                    ),
-                                    const PopupMenuItem(
-                                      value: 'reject',
-                                      child: Text("Reject"),
-                                    ),
-                                    const PopupMenuItem(
-                                      value: 'complete',
-                                      child: Text("Complete"),
-                                    ),
-                                    const PopupMenuItem(
-                                      value: 'cancel',
-                                      child: Text("Cancel"),
-                                    ),
-                                  ],
-                                  icon: const Icon(
-                                    Icons.edit,
-                                    size: 18,
-                                    color: Colors.blue,
+                                      ),
+                                    );
+                                  }
+                                },
+                                itemBuilder: (context) => [
+                                  const PopupMenuItem(
+                                    value: 'approve',
+                                    child: Text("Approve"),
                                   ),
+                                  const PopupMenuItem(
+                                    value: 'reject',
+                                    child: Text("Reject"),
+                                  ),
+                                  const PopupMenuItem(
+                                    value: 'complete',
+                                    child: Text("Complete"),
+                                  ),
+                                  const PopupMenuItem(
+                                    value: 'cancel',
+                                    child: Text("Cancel"),
+                                  ),
+                                ],
+                                icon: const Icon(
+                                  Icons.edit,
+                                  size: 18,
+                                  color: Colors.blue,
                                 ),
-                              ],
-                            ),
+                              ),
+                            ],
                           ),
-                        ],
-                      );
-                    }).toList(),
-                  ),
+                        ),
+                      ],
+                    );
+                  }).toList(),
                 ),
               ),
             ),
