@@ -1151,6 +1151,94 @@ class _EditAppointmentDialogState extends State<_EditAppointmentDialog> {
                 : const Text('Approve'),
           ),
         ],
+        // Cancel Appointment Button (available for all statuses except already cancelled)
+        if (widget.appointment.status.toLowerCase() != 'canceled' &&
+            widget.appointment.status.toLowerCase() != 'cancelled') ...[
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.orange,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: _loading
+                ? null
+                : () async {
+                    print('=== CANCEL BUTTON PRESSED ===');
+                    print(
+                      'Appointment ID: ${widget.appointment.appointmentId}',
+                    );
+                    print('Appointment Status: ${widget.appointment.status}');
+                    print(
+                      'Token: ${Authorization.token != null ? 'Present' : 'Missing'}',
+                    );
+
+                    setState(() {
+                      _loading = true;
+                    });
+                    try {
+                      final response = await http.put(
+                        Uri.parse(
+                          'http://localhost:5081/Appointments/${widget.appointment.appointmentId}/cancel',
+                        ),
+                        headers: {
+                          'Content-Type': 'application/json',
+                          'Authorization': 'Bearer ${Authorization.token}',
+                          'accept': 'text/plain',
+                        },
+                        body: jsonEncode({}),
+                      );
+                      print('Cancel response status: ${response.statusCode}');
+                      print('Cancel response body: ${response.body}');
+                      if (response.statusCode >= 200 &&
+                          response.statusCode < 300) {
+                        Navigator.of(context).pop();
+                        final appointmentProvider =
+                            Provider.of<AppointmentProvider>(
+                              context,
+                              listen: false,
+                            );
+                        appointmentProvider.fetchAppointmentsForDate(
+                          widget.selectedDate,
+                        );
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              'Appointment cancelled successfully!',
+                            ),
+                            backgroundColor: Colors.orange,
+                          ),
+                        );
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              'Failed to cancel appointment: \n${response.body}',
+                            ),
+                          ),
+                        );
+                      }
+                    } catch (e) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Error: \n${e.toString()}')),
+                      );
+                    } finally {
+                      if (mounted) {
+                        Future.microtask(
+                          () => setState(() {
+                            _loading = false;
+                          }),
+                        );
+                      }
+                    }
+                  },
+            child: _loading
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Text('Cancel Appointment'),
+          ),
+        ],
       ],
     );
   }

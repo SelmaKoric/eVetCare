@@ -160,6 +160,30 @@ class _InvoicePageState extends State<InvoicePage> {
     );
   }
 
+  void _showPaymentModal(Invoice invoice) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return _PaymentModal(
+          invoice: invoice,
+          onPaymentAdded: () {
+            fetchInvoices();
+            Navigator.of(context).pop();
+          },
+        );
+      },
+    );
+  }
+
+  void _showInvoiceDetails(Invoice invoice) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return _InvoiceDetailsModal(invoice: invoice);
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider.value(
@@ -224,6 +248,7 @@ class _InvoicePageState extends State<InvoicePage> {
                       DataColumn(label: Text('Amount Paid')),
                       DataColumn(label: Text('Date Paid')),
                       DataColumn(label: Text('Status')),
+                      DataColumn(label: Text('Actions')),
                     ],
                     rows: invoices.map((invoice) {
                       final serviceNames = invoice.invoiceItems
@@ -308,6 +333,32 @@ class _InvoicePageState extends State<InvoicePage> {
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
+                          ),
+                          DataCell(
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                if (!isPaid)
+                                  IconButton(
+                                    onPressed: () => _showPaymentModal(invoice),
+                                    icon: const Icon(
+                                      Icons.payment,
+                                      color: Colors.green,
+                                      size: 20,
+                                    ),
+                                    tooltip: 'Mark as Paid',
+                                  ),
+                                IconButton(
+                                  onPressed: () => _showInvoiceDetails(invoice),
+                                  icon: const Icon(
+                                    Icons.visibility,
+                                    color: Colors.blue,
+                                    size: 20,
+                                  ),
+                                  tooltip: 'View Details',
+                                ),
+                              ],
+                            ),
                           ),
                         ],
                       );
@@ -642,6 +693,309 @@ class _AddInvoiceDialogState extends State<_AddInvoiceDialog> {
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
               : const Text('Create Invoice'),
+        ),
+      ],
+    );
+  }
+}
+
+class _PaymentModal extends StatefulWidget {
+  final Invoice invoice;
+  final VoidCallback onPaymentAdded;
+
+  const _PaymentModal({required this.invoice, required this.onPaymentAdded});
+
+  @override
+  State<_PaymentModal> createState() => _PaymentModalState();
+}
+
+class _PaymentModalState extends State<_PaymentModal> {
+  final _formKey = GlobalKey<FormState>();
+  final _amountController = TextEditingController();
+  String _selectedPaymentMethod = 'Cash';
+  bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _amountController.text = widget.invoice.totalAmount.toStringAsFixed(2);
+  }
+
+  @override
+  void dispose() {
+    _amountController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submitPayment() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final paymentData = {
+        'invoiceId': widget.invoice.invoiceId,
+        'amount': double.parse(_amountController.text),
+        'methodId': _selectedPaymentMethod == 'Cash' ? 1 : 2,
+        'paymentDate': DateTime.now().toIso8601String(),
+      };
+
+      final response = await http.post(
+        Uri.parse('http://localhost:5081/Payment'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ${Authorization.token}',
+          'accept': 'text/plain',
+        },
+        body: jsonEncode(paymentData),
+      );
+
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Payment recorded successfully!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        widget.onPaymentAdded();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to record payment: ${response.body}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error recording payment: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Row(
+        children: [
+          const Icon(Icons.payment, color: Colors.green),
+          const SizedBox(width: 8),
+          Text('Record Payment - Invoice #${widget.invoice.invoiceId}'),
+        ],
+      ),
+      content: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 400),
+        child: Form(
+          key: _formKey,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Invoice Summary
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[100],
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Invoice Total: \$${widget.invoice.totalAmount.toStringAsFixed(2)}',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Issue Date: ${(() {
+                          final dateParts = widget.invoice.issueDate.split('T').first.split('-');
+                          return '${dateParts[2]}/${dateParts[1]}/${dateParts[0]}';
+                        }())}',
+                        style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // Payment Amount
+                TextFormField(
+                  controller: _amountController,
+                  decoration: const InputDecoration(
+                    labelText: 'Payment Amount',
+                    prefixText: '\$',
+                    border: OutlineInputBorder(),
+                  ),
+                  keyboardType: TextInputType.number,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter payment amount';
+                    }
+                    final amount = double.tryParse(value);
+                    if (amount == null || amount <= 0) {
+                      return 'Please enter a valid amount';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+
+                // Payment Method
+                const Text(
+                  'Payment Method',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                ),
+                const SizedBox(height: 8),
+                DropdownButtonFormField<String>(
+                  value: _selectedPaymentMethod,
+                  decoration: const InputDecoration(
+                    border: OutlineInputBorder(),
+                  ),
+                  items: const [
+                    DropdownMenuItem(value: 'Cash', child: Text('Cash')),
+                    DropdownMenuItem(value: 'Card', child: Text('Card')),
+                  ],
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedPaymentMethod = value!;
+                    });
+                  },
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+        ElevatedButton.icon(
+          onPressed: _isLoading ? null : _submitPayment,
+          icon: _isLoading
+              ? const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Icon(Icons.payment),
+          label: Text(_isLoading ? 'Processing...' : 'Record Payment'),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.green,
+            foregroundColor: Colors.white,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _InvoiceDetailsModal extends StatelessWidget {
+  final Invoice invoice;
+
+  const _InvoiceDetailsModal({required this.invoice});
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Row(
+        children: [
+          const Icon(Icons.receipt, color: Colors.blue),
+          const SizedBox(width: 8),
+          Text('Invoice Details - #${invoice.invoiceId}'),
+        ],
+      ),
+      content: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 500, maxHeight: 600),
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Invoice Header
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.blue[50],
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Invoice #${invoice.invoiceId}',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 18,
+                          ),
+                        ),
+                        Text(
+                          '\$${invoice.totalAmount.toStringAsFixed(2)}',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 18,
+                            color: Colors.green,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Issue Date: ${(() {
+                        final dateParts = invoice.issueDate.split('T').first.split('-');
+                        return '${dateParts[2]}/${dateParts[1]}/${dateParts[0]}';
+                      }())}',
+                      style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // Invoice Items
+              const Text(
+                'Services',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+              const SizedBox(height: 8),
+              ...invoice.invoiceItems.map(
+                (item) => Card(
+                  child: ListTile(
+                    title: Text('Service ID: ${item.serviceId}'),
+                    subtitle: Text('Invoice Item ID: ${item.invoiceItemId}'),
+                    trailing: const Icon(
+                      Icons.medical_services,
+                      color: Colors.blue,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Close'),
         ),
       ],
     );
