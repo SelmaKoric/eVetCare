@@ -89,9 +89,11 @@ class _ReportsPageState extends State<ReportsPage> {
       final startDateStr = DateFormat('yyyy-MM-dd').format(_startDate);
       final endDateStr = DateFormat('yyyy-MM-dd').format(_endDate);
 
+      print('Fetching invoices for date range: $startDateStr to $endDateStr');
+
       final response = await http.get(
         Uri.parse(
-          'http://localhost:5081/Invoice?startDate=$startDateStr&endDate=$endDateStr',
+          'http://localhost:5081/Invoice?issueDateFrom=$startDateStr&issueDateTo=$endDateStr',
         ),
         headers: {
           'Content-Type': 'application/json',
@@ -100,11 +102,33 @@ class _ReportsPageState extends State<ReportsPage> {
         },
       );
 
+      print('Invoice API response status: ${response.statusCode}');
+      print('Invoice API response body: ${response.body}');
+
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         final List<dynamic> result = data['result'] ?? [];
 
-        _invoices = result.map((e) => Invoice.fromJson(e)).toList();
+        // Parse all invoices first
+        final allInvoices = result.map((e) => Invoice.fromJson(e)).toList();
+
+        // Filter by date range on client side as fallback
+        _invoices = allInvoices.where((invoice) {
+          try {
+            final issueDate = DateTime.parse(invoice.issueDate.split('T')[0]);
+            return issueDate.isAfter(
+                  _startDate.subtract(const Duration(days: 1)),
+                ) &&
+                issueDate.isBefore(_endDate.add(const Duration(days: 1)));
+          } catch (e) {
+            print('Error parsing invoice date: ${invoice.issueDate}');
+            return false;
+          }
+        }).toList();
+
+        print(
+          'Loaded ${allInvoices.length} total invoices, filtered to ${_invoices.length} invoices in date range',
+        );
         await _calculateRevenue();
       }
     } catch (e) {
@@ -146,8 +170,13 @@ class _ReportsPageState extends State<ReportsPage> {
       final startDateStr = DateFormat('yyyy-MM-dd').format(_startDate);
       final endDateStr = DateFormat('yyyy-MM-dd').format(_endDate);
 
+      print('Fetching payments for date range: $startDateStr to $endDateStr');
+
+      // Fetch payments for the entire date range
       final response = await http.get(
-        Uri.parse('http://localhost:5081/Payment?PaymentDate=$startDateStr'),
+        Uri.parse(
+          'http://localhost:5081/Payment?paymentDateFrom=$startDateStr&paymentDateTo=$endDateStr',
+        ),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer ${Authorization.token}',
@@ -155,15 +184,43 @@ class _ReportsPageState extends State<ReportsPage> {
         },
       );
 
+      print('Payment API response status: ${response.statusCode}');
+      print('Payment API response body: ${response.body}');
+
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         final List<dynamic> result = data['result'] ?? [];
 
-        for (final paymentJson in result) {
-          final payment = Payment.fromJson(paymentJson as Map<String, dynamic>);
+        // Parse all payments first
+        final allPayments = result
+            .map((e) => Payment.fromJson(e as Map<String, dynamic>))
+            .toList();
+
+        // Filter by date range on client side as fallback
+        final filteredPayments = allPayments.where((payment) {
+          try {
+            final paymentDate = DateTime.parse(
+              payment.paymentDate.split('T')[0],
+            );
+            return paymentDate.isAfter(
+                  _startDate.subtract(const Duration(days: 1)),
+                ) &&
+                paymentDate.isBefore(_endDate.add(const Duration(days: 1)));
+          } catch (e) {
+            print('Error parsing payment date: ${payment.paymentDate}');
+            return false;
+          }
+        }).toList();
+
+        for (final payment in filteredPayments) {
           final method = payment.methodId == 1 ? 'Cash' : 'Card';
           _paymentMethods[method] = (_paymentMethods[method] ?? 0) + 1;
         }
+
+        print(
+          'Loaded ${allPayments.length} total payments, filtered to ${filteredPayments.length} payments in date range',
+        );
+        print('Loaded payment methods: $_paymentMethods');
       }
     } catch (e) {
       print('Error fetching payment methods: $e');
@@ -183,6 +240,18 @@ class _ReportsPageState extends State<ReportsPage> {
         _startDate = picked.start;
         _endDate = picked.end;
       });
+
+      // Show loading indicator
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Loading data for ${DateFormat('MMM dd').format(_startDate)} - ${DateFormat('MMM dd').format(_endDate)}',
+          ),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+
+      // Reload data with new date range
       _loadData();
     }
   }
