@@ -188,187 +188,218 @@ class _InvoicePageState extends State<InvoicePage> {
   Widget build(BuildContext context) {
     return ChangeNotifierProvider.value(
       value: _invoiceProvider,
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  'Invoices',
-                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-                ),
-                ElevatedButton.icon(
-                  onPressed: _showAddInvoiceModal,
-                  icon: const Icon(Icons.add),
-                  label: const Text('Add Invoice'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Theme.of(context).primaryColor,
-                    foregroundColor: Colors.white,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _buildSearch(),
+          Expanded(
+            child: Column(children: [_buildTable(), _buildPagination()]),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSearch() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Text(
+                'Invoices',
+                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+              ),
+              const Spacer(),
+              ElevatedButton.icon(
+                onPressed: _showAddInvoiceModal,
+                icon: const Icon(Icons.add),
+                label: const Text('Add Invoice'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF5AB7E2),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 14,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(30),
                   ),
                 ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Expanded(
-              child: FutureBuilder<SearchResult<Invoice>>(
-                future: _futureInvoices,
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator());
-                  } else if (snapshot.hasError) {
-                    return Center(child: Text('Error: \n${snapshot.error}'));
-                  } else if (!snapshot.hasData ||
-                      snapshot.data!.result.isEmpty) {
-                    return const Center(child: Text('No invoices found.'));
-                  }
-                  final invoices = snapshot.data!.result;
-                  // Fetch service names if not already loaded
-                  if (_serviceNames.isEmpty && !_loadingServices) {
-                    WidgetsBinding.instance.addPostFrameCallback((_) {
-                      if (mounted) _fetchServiceNamesForInvoices(invoices);
-                    });
-                    return const Center(child: CircularProgressIndicator());
-                  }
-                  // Fetch payments if not already loaded
-                  if (_payments.isEmpty && !_loadingPayments) {
-                    WidgetsBinding.instance.addPostFrameCallback((_) {
-                      if (mounted) _fetchPaymentsForInvoices(invoices);
-                    });
-                    return const Center(child: CircularProgressIndicator());
-                  }
-                  return SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: DataTable(
-                      columns: const [
-                        DataColumn(label: Text('Total Amount')),
-                        DataColumn(label: Text('Issue Date')),
-                        DataColumn(label: Text('Services')),
-                        DataColumn(label: Text('Amount Paid')),
-                        DataColumn(label: Text('Date Paid')),
-                        DataColumn(label: Text('Status')),
-                        DataColumn(label: Text('Actions')),
-                      ],
-                      rows: invoices.map((invoice) {
-                        final serviceNames = invoice.invoiceItems
-                            .map((item) => _serviceNames[item.serviceId])
-                            .where(
-                              (name) =>
-                                  name != null &&
-                                  name != 'Unknown' &&
-                                  name!.isNotEmpty,
-                            )
-                            .join(', ');
-                        final payments = _payments[invoice.invoiceId] ?? [];
-                        final amountPaid = payments.fold<double>(
-                          0.0,
-                          (sum, p) => sum + p.amount,
-                        );
-                        final datePaid = payments.isNotEmpty
-                            ? payments
-                                  .map((p) {
-                                    final dateParts = p.paymentDate
-                                        .split('T')
-                                        .first
-                                        .split('-');
-                                    return '${dateParts[2]}/${dateParts[1]}/${dateParts[0]}';
-                                  })
-                                  .join(', ')
-                            : '—';
-                        final isPaid =
-                            amountPaid >= invoice.totalAmount && amountPaid > 0;
-                        return DataRow(
-                          cells: [
-                            DataCell(
-                              Text(invoice.totalAmount.toStringAsFixed(2)),
-                            ),
-                            DataCell(
-                              Text(() {
-                                final dateParts = invoice.issueDate
-                                    .split('T')
-                                    .first
-                                    .split('-');
-                                return '${dateParts[2]}/${dateParts[1]}/${dateParts[0]}';
-                              }()),
-                            ),
-                            DataCell(
-                              Text(
-                                serviceNames.isNotEmpty ? serviceNames : '—',
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          const Divider(thickness: 1.2),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTable() {
+    return Expanded(
+      child: Align(
+        alignment: Alignment.topLeft,
+        child: SizedBox(
+          width: double.infinity,
+          child: FutureBuilder<SearchResult<Invoice>>(
+            future: _futureInvoices,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              } else if (snapshot.hasError) {
+                return Center(child: Text('Error: \n${snapshot.error}'));
+              } else if (!snapshot.hasData || snapshot.data!.result.isEmpty) {
+                return const Center(child: Text('No invoices found.'));
+              }
+              final invoices = snapshot.data!.result;
+              // Fetch service names if not already loaded
+              if (_serviceNames.isEmpty && !_loadingServices) {
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (mounted) _fetchServiceNamesForInvoices(invoices);
+                });
+                return const Center(child: CircularProgressIndicator());
+              }
+              // Fetch payments if not already loaded
+              if (_payments.isEmpty && !_loadingPayments) {
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (mounted) _fetchPaymentsForInvoices(invoices);
+                });
+                return const Center(child: CircularProgressIndicator());
+              }
+              return DataTable(
+                columnSpacing: 12,
+                horizontalMargin: 8,
+                headingRowHeight: 56,
+                dataRowMinHeight: 48,
+                columns: const [
+                  DataColumn(label: Text('Total Amount')),
+                  DataColumn(label: Text('Issue Date')),
+                  DataColumn(label: Text('Services')),
+                  DataColumn(label: Text('Amount Paid')),
+                  DataColumn(label: Text('Date Paid')),
+                  DataColumn(label: Text('Status')),
+                  DataColumn(label: Text('Actions')),
+                ],
+                rows: invoices.map((invoice) {
+                  final serviceNames = invoice.invoiceItems
+                      .map((item) => _serviceNames[item.serviceId])
+                      .where(
+                        (name) =>
+                            name != null &&
+                            name != 'Unknown' &&
+                            name!.isNotEmpty,
+                      )
+                      .join(', ');
+                  final payments = _payments[invoice.invoiceId] ?? [];
+                  final amountPaid = payments.fold<double>(
+                    0.0,
+                    (sum, p) => sum + p.amount,
+                  );
+                  final datePaid = payments.isNotEmpty
+                      ? payments
+                            .map((p) {
+                              final dateParts = p.paymentDate
+                                  .split('T')
+                                  .first
+                                  .split('-');
+                              return '${dateParts[2]}/${dateParts[1]}/${dateParts[0]}';
+                            })
+                            .join(', ')
+                      : '—';
+                  final isPaid =
+                      amountPaid >= invoice.totalAmount && amountPaid > 0;
+                  return DataRow(
+                    cells: [
+                      DataCell(Text(invoice.totalAmount.toStringAsFixed(2))),
+                      DataCell(
+                        Text(() {
+                          final dateParts = invoice.issueDate
+                              .split('T')
+                              .first
+                              .split('-');
+                          return '${dateParts[2]}/${dateParts[1]}/${dateParts[0]}';
+                        }()),
+                      ),
+                      DataCell(
+                        Flexible(
+                          child: Text(
+                            serviceNames.isNotEmpty ? serviceNames : '—',
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 2,
+                          ),
+                        ),
+                      ),
+                      DataCell(
+                        Text(
+                          amountPaid > 0 ? amountPaid.toStringAsFixed(2) : '—',
+                        ),
+                      ),
+                      DataCell(Text(datePaid)),
+                      DataCell(
+                        payments.isNotEmpty
+                            ? Chip(
+                                label: Text(isPaid ? 'Paid' : 'Unpaid'),
+                                backgroundColor: isPaid
+                                    ? Colors.green[100]
+                                    : Colors.red[100],
+                                labelStyle: TextStyle(
+                                  color: isPaid
+                                      ? Colors.green[900]
+                                      : Colors.red[900],
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              )
+                            : Chip(
+                                label: const Text('Unpaid'),
+                                backgroundColor: Colors.red[100],
+                                labelStyle: const TextStyle(
+                                  color: Colors.red,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
-                            ),
-                            DataCell(
-                              Text(
-                                amountPaid > 0
-                                    ? amountPaid.toStringAsFixed(2)
-                                    : '—',
+                      ),
+                      DataCell(
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (!isPaid)
+                              IconButton(
+                                onPressed: () => _showPaymentModal(invoice),
+                                icon: const Icon(
+                                  Icons.payment,
+                                  color: Colors.green,
+                                  size: 20,
+                                ),
+                                tooltip: 'Mark as Paid',
                               ),
-                            ),
-                            DataCell(Text(datePaid)),
-                            DataCell(
-                              payments.isNotEmpty
-                                  ? Chip(
-                                      label: Text(isPaid ? 'Paid' : 'Unpaid'),
-                                      backgroundColor: isPaid
-                                          ? Colors.green[100]
-                                          : Colors.red[100],
-                                      labelStyle: TextStyle(
-                                        color: isPaid
-                                            ? Colors.green[900]
-                                            : Colors.red[900],
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    )
-                                  : Chip(
-                                      label: const Text('Unpaid'),
-                                      backgroundColor: Colors.red[100],
-                                      labelStyle: const TextStyle(
-                                        color: Colors.red,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                            ),
-                            DataCell(
-                              Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  if (!isPaid)
-                                    IconButton(
-                                      onPressed: () =>
-                                          _showPaymentModal(invoice),
-                                      icon: const Icon(
-                                        Icons.payment,
-                                        color: Colors.green,
-                                        size: 20,
-                                      ),
-                                      tooltip: 'Mark as Paid',
-                                    ),
-                                  IconButton(
-                                    onPressed: () =>
-                                        _showInvoiceDetails(invoice),
-                                    icon: const Icon(
-                                      Icons.visibility,
-                                      color: Colors.blue,
-                                      size: 20,
-                                    ),
-                                    tooltip: 'View Details',
-                                  ),
-                                ],
+                            IconButton(
+                              onPressed: () => _showInvoiceDetails(invoice),
+                              icon: const Icon(
+                                Icons.visibility,
+                                color: Colors.blue,
+                                size: 20,
                               ),
+                              tooltip: 'View Details',
                             ),
                           ],
-                        );
-                      }).toList(),
-                    ),
+                        ),
+                      ),
+                    ],
                   );
-                },
-              ),
-            ),
-          ],
+                }).toList(),
+              );
+            },
+          ),
         ),
       ),
     );
+  }
+
+  Widget _buildPagination() {
+    return Container(); // Invoices page doesn't need pagination for now
   }
 }
 

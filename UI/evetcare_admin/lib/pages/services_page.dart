@@ -104,360 +104,351 @@ class _ServicesPageState extends State<ServicesPage> {
   Widget build(BuildContext context) {
     return ChangeNotifierProvider.value(
       value: _serviceProvider,
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            _buildSearch(),
-            const SizedBox(height: 16),
-            Expanded(
-              child: Column(
-                children: [
-                  Expanded(child: _buildTable()),
-                  _buildPagination(),
-                ],
-              ),
-            ),
-          ],
-        ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _buildSearch(),
+          Expanded(
+            child: Column(children: [_buildTable(), _buildPagination()]),
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildSearch() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            const Text(
-              "Services",
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-            ),
-            const Spacer(),
-            SizedBox(
-              width: 180,
-              child: _loadingCategories
-                  ? Row(
-                      children: [
-                        const Expanded(child: Text('All Categories')),
-                        const SizedBox(width: 8),
-                        const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        ),
-                      ],
-                    )
-                  : DropdownButton<ServiceCategory?>(
-                      isExpanded: true,
-                      value: _selectedCategory,
-                      hint: const Text('All Categories'),
-                      items: [
-                        const DropdownMenuItem<ServiceCategory?>(
-                          value: null,
-                          child: Text('All Categories'),
-                        ),
-                        ..._categories.map(
-                          (cat) => DropdownMenuItem<ServiceCategory?>(
-                            value: cat,
-                            child: Text(cat.name),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Text(
+                "Services",
+                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+              ),
+              const Spacer(),
+              SizedBox(
+                width: 180,
+                child: _loadingCategories
+                    ? Row(
+                        children: [
+                          const Expanded(child: Text('All Categories')),
+                          const SizedBox(width: 8),
+                          const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
                           ),
-                        ),
-                      ],
-                      onChanged: _onCategoryChanged,
+                        ],
+                      )
+                    : DropdownButton<ServiceCategory?>(
+                        isExpanded: true,
+                        value: _selectedCategory,
+                        hint: const Text('All Categories'),
+                        items: [
+                          const DropdownMenuItem<ServiceCategory?>(
+                            value: null,
+                            child: Text('All Categories'),
+                          ),
+                          ..._categories.map(
+                            (cat) => DropdownMenuItem<ServiceCategory?>(
+                              value: cat,
+                              child: Text(cat.name),
+                            ),
+                          ),
+                        ],
+                        onChanged: _onCategoryChanged,
+                      ),
+              ),
+              const SizedBox(width: 12),
+              SizedBox(
+                width: 250,
+                child: TextField(
+                  controller: _searchController,
+                  onSubmitted: (_) => _onSearch(),
+                  style: const TextStyle(fontSize: 14),
+                  decoration: InputDecoration(
+                    hintText: 'Search services...',
+                    prefixIcon: const Icon(Icons.search),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
                     ),
-            ),
-            const SizedBox(width: 12),
-            SizedBox(
-              width: 250,
-              child: TextField(
-                controller: _searchController,
-                onSubmitted: (_) => _onSearch(),
-                style: const TextStyle(fontSize: 14),
-                decoration: InputDecoration(
-                  hintText: 'Search services...',
-                  prefixIcon: const Icon(Icons.search),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(30),
+                      borderSide: BorderSide.none,
+                    ),
+                    filled: true,
+                    fillColor: Colors.grey[200],
                   ),
-                  border: OutlineInputBorder(
+                ),
+              ),
+              const SizedBox(width: 12),
+              OutlinedButton(
+                onPressed: _clearFilters,
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 18,
+                    vertical: 14,
+                  ),
+                  shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(30),
-                    borderSide: BorderSide.none,
                   ),
-                  filled: true,
-                  fillColor: Colors.grey[200],
+                ),
+                child: const Text('Clear'),
+              ),
+              const SizedBox(width: 8),
+              ElevatedButton.icon(
+                onPressed: () async {
+                  final result = await showDialog<bool>(
+                    context: context,
+                    builder: (context) => AddServiceDialog(),
+                  );
+                  if (result == true) {
+                    _fetchServices();
+                  }
+                },
+                icon: const Icon(Icons.add),
+                label: const Text("Add Service"),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF5AB7E2),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 14,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(30),
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(width: 12),
-            OutlinedButton(
-              onPressed: _clearFilters,
-              style: OutlinedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 18,
-                  vertical: 14,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(30),
-                ),
-              ),
-              child: const Text('Clear'),
-            ),
-            const SizedBox(width: 8),
-            ElevatedButton.icon(
-              onPressed: () async {
-                final result = await showDialog<bool>(
-                  context: context,
-                  builder: (context) => AddServiceDialog(),
-                );
-                if (result == true) {
-                  _fetchServices();
-                }
-              },
-              icon: const Icon(Icons.add),
-              label: const Text("Add Service"),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF5AB7E2),
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 14,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(30),
-                ),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        const Divider(thickness: 1.2),
-      ],
+            ],
+          ),
+          const SizedBox(height: 12),
+          const Divider(thickness: 1.2),
+        ],
+      ),
     );
   }
 
   Widget _buildTable() {
-    return FutureBuilder<SearchResult<Service>>(
-      future: _futureServices,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        } else if (snapshot.hasError) {
-          return Center(child: Text('Error: ${snapshot.error}'));
-        } else if (!snapshot.hasData || snapshot.data!.result.isEmpty) {
-          return const Center(child: Text('No services found.'));
-        }
-        final services = snapshot.data!.result;
-        return SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: ConstrainedBox(
-            constraints: BoxConstraints(
-              minWidth:
-                  MediaQuery.of(context).size.width - 64, // Account for padding
-            ),
-            child: DataTable(
-              columnSpacing: 32,
-              horizontalMargin: 24,
-              headingRowHeight: 56,
-              columns: const [
-                DataColumn(
-                  label: Text(
-                    'Name',
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                ),
-                DataColumn(
-                  label: Text(
-                    'Description',
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                ),
-                DataColumn(
-                  label: Text(
-                    'Category',
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                ),
-                DataColumn(
-                  label: Text(
-                    'Price',
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                ),
-                DataColumn(
-                  label: Text(
-                    'Duration',
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                ),
-                DataColumn(
-                  label: Text(
-                    'Actions',
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                ),
-              ],
-              rows: services.map((service) {
-                return DataRow(
-                  cells: [
-                    DataCell(
-                      Container(
-                        constraints: const BoxConstraints(maxWidth: 200),
-                        child: Text(
-                          service.name,
-                          overflow: TextOverflow.ellipsis,
-                          maxLines: 2,
-                          style: const TextStyle(fontWeight: FontWeight.w500),
-                        ),
-                      ),
+    return Expanded(
+      child: Align(
+        alignment: Alignment.topLeft,
+        child: SizedBox(
+          width: double.infinity,
+          child: FutureBuilder<SearchResult<Service>>(
+            future: _futureServices,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              } else if (snapshot.hasError) {
+                return Center(child: Text('Error: ${snapshot.error}'));
+              } else if (!snapshot.hasData || snapshot.data!.result.isEmpty) {
+                return const Center(child: Text('No services found.'));
+              }
+              final services = snapshot.data!.result;
+              return DataTable(
+                columnSpacing: 12,
+                horizontalMargin: 8,
+                headingRowHeight: 56,
+                dataRowMinHeight: 48,
+                columns: const [
+                  DataColumn(
+                    label: Text(
+                      'Name',
+                      style: TextStyle(fontWeight: FontWeight.bold),
                     ),
-                    DataCell(
-                      Container(
-                        constraints: const BoxConstraints(maxWidth: 300),
-                        child: Text(
-                          service.description ?? '',
-                          overflow: TextOverflow.ellipsis,
-                          maxLines: 3,
-                        ),
-                      ),
+                  ),
+                  DataColumn(
+                    label: Text(
+                      'Description',
+                      style: TextStyle(fontWeight: FontWeight.bold),
                     ),
-                    DataCell(
-                      Container(
-                        constraints: const BoxConstraints(maxWidth: 150),
-                        child: Text(
-                          service.categoryName ?? '',
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
+                  ),
+                  DataColumn(
+                    label: Text(
+                      'Category',
+                      style: TextStyle(fontWeight: FontWeight.bold),
                     ),
-                    DataCell(
-                      Text(
-                        '\$${service.price?.toStringAsFixed(2) ?? '0.00'}',
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: Colors.green,
-                        ),
-                      ),
+                  ),
+                  DataColumn(
+                    label: Text(
+                      'Price',
+                      style: TextStyle(fontWeight: FontWeight.bold),
                     ),
-                    DataCell(
-                      Text(
-                        service.durationMinutes == null ||
-                                service.durationMinutes == 0
-                            ? '—'
-                            : service.durationMinutes! % 60 == 0
-                            ? '${(service.durationMinutes! / 60).round()}h'
-                            : '${service.durationMinutes}m',
-                      ),
+                  ),
+                  DataColumn(
+                    label: Text(
+                      'Duration',
+                      style: TextStyle(fontWeight: FontWeight.bold),
                     ),
-                    DataCell(
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          ElevatedButton(
-                            onPressed: () async {
-                              final result = await showDialog<bool>(
-                                context: context,
-                                builder: (context) => EditServiceDialog(
-                                  service: service,
-                                  categories: _categories,
-                                ),
-                              );
-                              if (result == true) {
-                                _fetchServices();
-                              }
-                            },
-                            style: ElevatedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 8,
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              backgroundColor: const Color(0xFF5AB7E2),
-                              foregroundColor: Colors.white,
-                            ),
-                            child: const Text("Edit"),
+                  ),
+                  DataColumn(
+                    label: Text(
+                      'Actions',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ],
+                rows: services.map((service) {
+                  return DataRow(
+                    cells: [
+                      DataCell(
+                        Flexible(
+                          child: Text(
+                            service.name,
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 2,
+                            style: const TextStyle(fontWeight: FontWeight.w500),
                           ),
-                          const SizedBox(width: 8),
-                          ElevatedButton(
-                            onPressed: () async {
-                              final confirm = await showDialog<bool>(
-                                context: context,
-                                builder: (context) => AlertDialog(
-                                  title: const Text('Confirm Delete'),
-                                  content: const Text(
-                                    'Are you sure you want to delete this service?',
+                        ),
+                      ),
+                      DataCell(
+                        Flexible(
+                          child: Text(
+                            service.description ?? '',
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 3,
+                          ),
+                        ),
+                      ),
+                      DataCell(
+                        Flexible(
+                          child: Text(
+                            service.categoryName ?? '',
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ),
+                      DataCell(
+                        Text(
+                          '\$${service.price?.toStringAsFixed(2) ?? '0.00'}',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.green,
+                          ),
+                        ),
+                      ),
+                      DataCell(
+                        Text(
+                          service.durationMinutes == null ||
+                                  service.durationMinutes == 0
+                              ? '—'
+                              : service.durationMinutes! % 60 == 0
+                              ? '${(service.durationMinutes! / 60).round()}h'
+                              : '${service.durationMinutes}m',
+                        ),
+                      ),
+                      DataCell(
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            ElevatedButton(
+                              onPressed: () async {
+                                final result = await showDialog<bool>(
+                                  context: context,
+                                  builder: (context) => EditServiceDialog(
+                                    service: service,
+                                    categories: _categories,
                                   ),
-                                  actions: [
-                                    TextButton(
-                                      onPressed: () =>
-                                          Navigator.of(context).pop(false),
-                                      child: const Text('Cancel'),
-                                    ),
-                                    TextButton(
-                                      onPressed: () =>
-                                          Navigator.of(context).pop(true),
-                                      child: const Text(
-                                        'Delete',
-                                        style: TextStyle(color: Colors.red),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              );
-                              if (confirm == true) {
-                                final token = Authorization.token;
-                                await http.put(
-                                  Uri.parse(
-                                    'http://localhost:5081/Services/${service.serviceId}',
-                                  ),
-                                  headers: {
-                                    'Content-Type': 'application/json',
-                                    'Authorization': 'Bearer $token',
-                                    'accept': 'text/plain',
-                                  },
-                                  body: jsonEncode({
-                                    'serviceId': service.serviceId,
-                                    'name': service.name,
-                                    'description': service.description,
-                                    'categoryId': service.categoryId,
-                                    'categoryName': service.categoryName,
-                                    'price': service.price ?? 0.0,
-                                    'durationMinutes':
-                                        service.durationMinutes ?? 0,
-                                    'isActive': false,
-                                  }),
                                 );
-                                _fetchServices();
-                              }
-                            },
-                            style: ElevatedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 8,
+                                if (result == true) {
+                                  _fetchServices();
+                                }
+                              },
+                              style: ElevatedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 8,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                backgroundColor: const Color(0xFF5AB7E2),
+                                foregroundColor: Colors.white,
                               ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              backgroundColor: Colors.red.shade400,
-                              foregroundColor: Colors.white,
+                              child: const Text("Edit"),
                             ),
-                            child: const Text("Delete"),
-                          ),
-                        ],
+                            const SizedBox(width: 8),
+                            ElevatedButton(
+                              onPressed: () async {
+                                final confirm = await showDialog<bool>(
+                                  context: context,
+                                  builder: (context) => AlertDialog(
+                                    title: const Text('Confirm Delete'),
+                                    content: const Text(
+                                      'Are you sure you want to delete this service?',
+                                    ),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () =>
+                                            Navigator.of(context).pop(false),
+                                        child: const Text('Cancel'),
+                                      ),
+                                      TextButton(
+                                        onPressed: () =>
+                                            Navigator.of(context).pop(true),
+                                        child: const Text(
+                                          'Delete',
+                                          style: TextStyle(color: Colors.red),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                                if (confirm == true) {
+                                  final token = Authorization.token;
+                                  await http.put(
+                                    Uri.parse(
+                                      'http://localhost:5081/Services/${service.serviceId}',
+                                    ),
+                                    headers: {
+                                      'Content-Type': 'application/json',
+                                      'Authorization': 'Bearer $token',
+                                      'accept': 'text/plain',
+                                    },
+                                    body: jsonEncode({
+                                      'serviceId': service.serviceId,
+                                      'name': service.name,
+                                      'description': service.description,
+                                      'categoryId': service.categoryId,
+                                      'categoryName': service.categoryName,
+                                      'price': service.price ?? 0.0,
+                                      'durationMinutes':
+                                          service.durationMinutes ?? 0,
+                                      'isActive': false,
+                                    }),
+                                  );
+                                  _fetchServices();
+                                }
+                              },
+                              style: ElevatedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 8,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                backgroundColor: Colors.red.shade400,
+                                foregroundColor: Colors.white,
+                              ),
+                              child: const Text("Delete"),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
-                );
-              }).toList(),
-            ),
+                    ],
+                  );
+                }).toList(),
+              );
+            },
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 

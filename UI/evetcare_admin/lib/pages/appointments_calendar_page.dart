@@ -823,10 +823,15 @@ class _EditAppointmentDialogState extends State<_EditAppointmentDialog> {
     print('=== BUILDING EDIT DIALOG ===');
     print('_status: "$_status"');
     print('widget.appointment.status: "${widget.appointment.status}"');
+    print('widget.appointment.statusId: ${widget.appointment.statusId}');
     final isPending = _status == 'pending';
     final isApproved = _status == 'approved';
+    final isConfirmed =
+        widget.appointment.status.toLowerCase() ==
+        'approved'; // Check for "Approved" status
     print('isPending: $isPending');
     print('isApproved: $isApproved');
+    print('isConfirmed: $isConfirmed');
     return AlertDialog(
       title: const Text('Edit Appointment'),
       content: ConstrainedBox(
@@ -858,7 +863,9 @@ class _EditAppointmentDialogState extends State<_EditAppointmentDialog> {
                             ),
                           );
                         }).toList(),
-                        onChanged: (val) => setState(() => _petId = val),
+                        onChanged: isConfirmed
+                            ? null
+                            : (val) => setState(() => _petId = val),
                         validator: (val) =>
                             val == null ? 'Pet is required' : null,
                       ),
@@ -871,19 +878,21 @@ class _EditAppointmentDialogState extends State<_EditAppointmentDialog> {
                               ? ''
                               : '${_date!.day.toString().padLeft(2, '0')}/${_date!.month.toString().padLeft(2, '0')}/${_date!.year}',
                         ),
-                        onTap: () async {
-                          final picked = await showDatePicker(
-                            context: context,
-                            initialDate: _date ?? DateTime.now(),
-                            firstDate: DateTime(2000),
-                            lastDate: DateTime(2100),
-                          );
-                          if (picked != null) {
-                            setState(() {
-                              _date = picked;
-                            });
-                          }
-                        },
+                        onTap: isConfirmed
+                            ? null
+                            : () async {
+                                final picked = await showDatePicker(
+                                  context: context,
+                                  initialDate: _date ?? DateTime.now(),
+                                  firstDate: DateTime(2000),
+                                  lastDate: DateTime(2100),
+                                );
+                                if (picked != null) {
+                                  setState(() {
+                                    _date = picked;
+                                  });
+                                }
+                              },
                         validator: (value) =>
                             _date == null ? 'Date is required' : null,
                       ),
@@ -894,17 +903,19 @@ class _EditAppointmentDialogState extends State<_EditAppointmentDialog> {
                         controller: TextEditingController(
                           text: _time == null ? '' : _time!.format(context),
                         ),
-                        onTap: () async {
-                          final picked = await showTimePicker(
-                            context: context,
-                            initialTime: _time ?? TimeOfDay.now(),
-                          );
-                          if (picked != null) {
-                            setState(() {
-                              _time = picked;
-                            });
-                          }
-                        },
+                        onTap: isConfirmed
+                            ? null
+                            : () async {
+                                final picked = await showTimePicker(
+                                  context: context,
+                                  initialTime: _time ?? TimeOfDay.now(),
+                                );
+                                if (picked != null) {
+                                  setState(() {
+                                    _time = picked;
+                                  });
+                                }
+                              },
                         validator: (value) =>
                             _time == null ? 'Time is required' : null,
                       ),
@@ -922,7 +933,9 @@ class _EditAppointmentDialogState extends State<_EditAppointmentDialog> {
                               ),
                             )
                             .toList(),
-                        onChanged: (val) => setState(() => _duration = val),
+                        onChanged: isConfirmed
+                            ? null
+                            : (val) => setState(() => _duration = val),
                         validator: (val) =>
                             val == null ? 'Duration is required' : null,
                       ),
@@ -963,7 +976,9 @@ class _EditAppointmentDialogState extends State<_EditAppointmentDialog> {
                                 ).colorScheme.primary,
                                 checkmarkColor: Colors.white,
                                 backgroundColor: Colors.grey[200],
-                                onSelected: null, // Make chips read-only
+                                onSelected: isConfirmed
+                                    ? null
+                                    : null, // Make chips read-only for confirmed appointments
                               );
                             })
                             .toList(),
@@ -979,6 +994,34 @@ class _EditAppointmentDialogState extends State<_EditAppointmentDialog> {
                             ),
                           ),
                         ),
+                      // Status indicator for confirmed appointments
+                      if (isConfirmed)
+                        Container(
+                          margin: const EdgeInsets.only(top: 16.0),
+                          padding: const EdgeInsets.all(12.0),
+                          decoration: BoxDecoration(
+                            color: Colors.green[50],
+                            borderRadius: BorderRadius.circular(8.0),
+                            border: Border.all(color: Colors.green[200]!),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.check_circle,
+                                color: Colors.green[700],
+                                size: 20,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                'Appointment Approved',
+                                style: TextStyle(
+                                  color: Colors.green[700],
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                     ],
                   ),
                 ),
@@ -987,8 +1030,9 @@ class _EditAppointmentDialogState extends State<_EditAppointmentDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
+          child: const Text('Close'),
         ),
+        // Show action buttons based on status
         if (isPending) ...[
           ElevatedButton(
             style: ElevatedButton.styleFrom(
