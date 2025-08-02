@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:evetcare_admin/pages/services_page.dart';
 import 'package:evetcare_admin/pages/appointments_calendar_page.dart';
 import 'package:evetcare_admin/pages/invoice_page.dart';
+import 'package:evetcare_admin/pages/reports_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -18,9 +19,9 @@ class _HomePageState extends State<HomePage> {
   final List<Widget> tabs = [
     PatientsPage(),
     AppointmentsCalendarPage(),
-    Center(child: Text("Reports")),
+    ReportsPage(),
     ServicesPage(),
-    InvoicePage(), // Replaces Center(child: Text("Invoices"))
+    InvoicePage(),
   ];
 
   final List<String> tabTitles = [
