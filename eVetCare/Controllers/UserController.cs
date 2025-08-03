@@ -9,18 +9,13 @@ namespace eVetCare.API.Controllers
 {
     [ApiController]
     [Route("[controller]")]
-    public class UserController : BaseCRUDController<User, BaseSearchObject, object, UserUpdateRequest>
+    public class UserController : BaseCRUDController<User, BaseSearchObject, UserInsertRequest, UserUpdateRequest>
     {
         public UserController(IUserService service) : base(service)
         {
         }
 
-        [HttpPost]
-        [ApiExplorerSettings(IgnoreApi = true)]
-        public override User Insert([FromBody] object request)
-        {
-            throw new NotImplementedException("Insert not supported.");
-        }
+       
     }
 }
 
