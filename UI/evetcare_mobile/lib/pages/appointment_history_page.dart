@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
-import 'book_appointment_page.dart';
+import '../models/appointment.dart';
+import '../services/appointment_service.dart';
 import 'edit_appointment_page.dart';
-import '../utils/authorization.dart';
-import 'dart:convert';
-import 'package:http/http.dart' as http;
 
 class AppointmentHistoryPage extends StatefulWidget {
   const AppointmentHistoryPage({super.key});
@@ -29,46 +27,23 @@ class _AppointmentHistoryPageState extends State<AppointmentHistoryPage> {
     });
 
     try {
-      if (Authorization.userId == null) {
-        throw Exception('User ID not found');
-      }
+      final appointments = await AppointmentService.getAppointments();
 
-      final response = await http.get(
-        Uri.parse(
-          'http://10.0.2.2:5081/Appointments?OwnerId=${Authorization.userId}',
-        ),
-        headers: {
-          'Authorization': 'Bearer ${Authorization.token}',
-          'Content-Type': 'application/json',
-        },
-      );
+      setState(() {
+        _appointments = appointments;
+        _isLoading = false;
+      });
 
-      print(
-        'Appointments API Response: ${response.statusCode} - ${response.body}',
-      );
+      print('Loaded ${_appointments.length} appointments');
 
-      if (response.statusCode == 200) {
-        final dynamic responseData = json.decode(response.body);
+      // Debug: Print all status values from loaded appointments
+      final statuses = _appointments.map((a) => a.status).toSet();
+      print('Status values from API: $statuses');
 
-        List<dynamic> appointmentsData;
-        if (responseData is Map && responseData.containsKey('result')) {
-          appointmentsData = responseData['result'] ?? [];
-        } else if (responseData is List) {
-          appointmentsData = responseData;
-        } else {
-          appointmentsData = [];
-        }
-
-        setState(() {
-          _appointments = appointmentsData.map((appointment) {
-            return Appointment.fromJson(appointment);
-          }).toList();
-        });
-
-        print('Loaded ${_appointments.length} appointments');
-      } else {
-        throw Exception(
-          'Failed to load appointments: ${response.statusCode} - ${response.body}',
+      // Debug: Print first few appointments with their status
+      for (int i = 0; i < _appointments.length && i < 3; i++) {
+        print(
+          'Appointment ${i + 1}: ID=${_appointments[i].appointmentId}, Status="${_appointments[i].status}"',
         );
       }
     } catch (e) {
@@ -80,18 +55,18 @@ class _AppointmentHistoryPageState extends State<AppointmentHistoryPage> {
           ),
         );
       }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
+      setState(() {
+        _isLoading = false;
+      });
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final filteredAppointments = _getFilteredAppointments();
+    final filteredAppointments = AppointmentService.filterByStatus(
+      _appointments,
+      _selectedFilter,
+    );
 
     return Scaffold(
       appBar: AppBar(
@@ -215,15 +190,6 @@ class _AppointmentHistoryPageState extends State<AppointmentHistoryPage> {
     );
   }
 
-  List<Appointment> _getFilteredAppointments() {
-    if (_selectedFilter == 'All') {
-      return _appointments;
-    }
-    return _appointments
-        .where((a) => a.status.toLowerCase() == _selectedFilter.toLowerCase())
-        .toList();
-  }
-
   Widget _buildEmptyState() {
     return Center(
       child: Column(
@@ -318,7 +284,7 @@ class _AppointmentHistoryPageState extends State<AppointmentHistoryPage> {
                   Icon(Icons.calendar_today, size: 16, color: Colors.grey[600]),
                   const SizedBox(width: 8),
                   Text(
-                    _formatDate(appointment.date),
+                    AppointmentService.formatDate(appointment.date),
                     style: TextStyle(fontSize: 14, color: Colors.grey[600]),
                   ),
                   const SizedBox(width: 16),
@@ -332,46 +298,48 @@ class _AppointmentHistoryPageState extends State<AppointmentHistoryPage> {
                   Icon(Icons.schedule, size: 16, color: Colors.grey[600]),
                   const SizedBox(width: 8),
                   Text(
-                    appointment.duration,
+                    AppointmentService.formatDuration(appointment.duration),
                     style: TextStyle(fontSize: 14, color: Colors.grey[600]),
                   ),
                 ],
               ),
 
-              // Action buttons for approved appointments
-              if (isApproved) ...[
+              // Action buttons for approved and pending appointments
+              if (isApproved || isPending) ...[
                 const SizedBox(height: 12),
                 Row(
                   children: [
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: () => _editAppointment(appointment),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: const Color.fromARGB(
-                            255,
-                            90,
-                            183,
-                            226,
+                    if (isApproved) ...[
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () => _editAppointment(appointment),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: const Color.fromARGB(
+                              255,
+                              90,
+                              183,
+                              226,
+                            ),
+                            side: const BorderSide(
+                              color: Color.fromARGB(255, 90, 183, 226),
+                            ),
                           ),
-                          side: const BorderSide(
-                            color: Color.fromARGB(255, 90, 183, 226),
+                          child: const Text('Edit'),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () => _rescheduleAppointment(appointment),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: Colors.orange,
+                            side: const BorderSide(color: Colors.orange),
                           ),
+                          child: const Text('Reschedule'),
                         ),
-                        child: const Text('Edit'),
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: () => _rescheduleAppointment(appointment),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: Colors.orange,
-                          side: const BorderSide(color: Colors.orange),
-                        ),
-                        child: const Text('Reschedule'),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
+                      const SizedBox(width: 8),
+                    ],
                     Expanded(
                       child: ElevatedButton(
                         onPressed: () => _cancelAppointment(appointment),
@@ -393,70 +361,21 @@ class _AppointmentHistoryPageState extends State<AppointmentHistoryPage> {
   }
 
   Widget _buildStatusChip(String status) {
-    Color backgroundColor;
-    Color textColor;
-    String text = status;
-
-    switch (status.toLowerCase()) {
-      case 'approved':
-        backgroundColor = const Color.fromARGB(255, 90, 183, 226);
-        textColor = Colors.white;
-        break;
-      case 'completed':
-        backgroundColor = Colors.green;
-        textColor = Colors.white;
-        break;
-      case 'cancelled':
-        backgroundColor = Colors.red;
-        textColor = Colors.white;
-        break;
-      case 'pending':
-        backgroundColor = Colors.orange;
-        textColor = Colors.white;
-        break;
-      default:
-        backgroundColor = Colors.grey;
-        textColor = Colors.white;
-        break;
-    }
-
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: backgroundColor,
+        color: AppointmentService.getStatusColor(status),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Text(
-        text,
+        status,
         style: TextStyle(
-          color: textColor,
+          color: AppointmentService.getStatusTextColor(status),
           fontSize: 12,
           fontWeight: FontWeight.w500,
         ),
       ),
     );
-  }
-
-  String _formatDate(String dateString) {
-    try {
-      final date = DateTime.parse(dateString);
-      final now = DateTime.now();
-      final difference = date.difference(now).inDays;
-
-      if (difference == 0) {
-        return 'Today';
-      } else if (difference == 1) {
-        return 'Tomorrow';
-      } else if (difference == -1) {
-        return 'Yesterday';
-      } else if (difference > 0) {
-        return 'In $difference days';
-      } else {
-        return '${date.month}/${date.day}/${date.year}';
-      }
-    } catch (e) {
-      return dateString;
-    }
   }
 
   void _rescheduleAppointment(Appointment appointment) {
@@ -490,7 +409,7 @@ class _AppointmentHistoryPageState extends State<AppointmentHistoryPage> {
 
   void _showRescheduleDialog(Appointment appointment) {
     DateTime? newDate = DateTime.tryParse(appointment.date);
-    TimeOfDay? newTime = _parseTimeString(appointment.time);
+    TimeOfDay? newTime = AppointmentService.parseTimeString(appointment.time);
 
     showDialog(
       context: context,
@@ -581,48 +500,18 @@ class _AppointmentHistoryPageState extends State<AppointmentHistoryPage> {
     );
   }
 
-  TimeOfDay? _parseTimeString(String timeString) {
-    try {
-      final timeParts = timeString.split(':');
-      final hour = int.parse(timeParts[0]);
-      final minute = int.parse(timeParts[1]);
-
-      return TimeOfDay(hour: hour, minute: minute);
-    } catch (e) {
-      return null;
-    }
-  }
-
   void _editAppointment(Appointment appointment) {
-    // Navigate to book appointment page with pre-filled data
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) =>
-            BookAppointmentPage(editingAppointment: appointment),
+    // This would navigate to a book appointment page with editing mode
+    // For now, we'll just show a message
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Edit functionality will be implemented soon'),
+        backgroundColor: Colors.blue,
       ),
-    ).then((updatedAppointment) {
-      if (updatedAppointment != null) {
-        setState(() {
-          final index = _appointments.indexWhere(
-            (a) => a.appointmentId == appointment.appointmentId,
-          );
-          if (index != -1) {
-            _appointments[index] = updatedAppointment;
-          }
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Appointment updated successfully!'),
-            backgroundColor: Colors.green,
-          ),
-        );
-      }
-    });
+    );
   }
 
   void _editPendingAppointment(Appointment appointment) {
-    // Navigate to edit appointment page for pending appointments
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -630,7 +519,6 @@ class _AppointmentHistoryPageState extends State<AppointmentHistoryPage> {
       ),
     ).then((success) {
       if (success == true) {
-        // Refresh the appointments list
         _loadAppointments();
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -647,7 +535,6 @@ class _AppointmentHistoryPageState extends State<AppointmentHistoryPage> {
     DateTime newDate,
     TimeOfDay newTime,
   ) {
-    // TODO: Call API to update appointment
     setState(() {
       final index = _appointments.indexWhere(
         (a) => a.appointmentId == appointment.appointmentId,
@@ -678,8 +565,8 @@ class _AppointmentHistoryPageState extends State<AppointmentHistoryPage> {
     );
   }
 
-  void _cancelAppointment(Appointment appointment) {
-    showDialog(
+  Future<void> _cancelAppointment(Appointment appointment) async {
+    final shouldCancel = await showDialog<bool>(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
@@ -689,20 +576,11 @@ class _AppointmentHistoryPageState extends State<AppointmentHistoryPage> {
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.of(context).pop(),
+              onPressed: () => Navigator.of(context).pop(false),
               child: const Text('No'),
             ),
             ElevatedButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                // TODO: Call API to cancel appointment
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Appointment cancelled successfully'),
-                    backgroundColor: Colors.green,
-                  ),
-                );
-              },
+              onPressed: () => Navigator.of(context).pop(true),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.red,
                 foregroundColor: Colors.white,
@@ -713,70 +591,66 @@ class _AppointmentHistoryPageState extends State<AppointmentHistoryPage> {
         );
       },
     );
-  }
-}
 
-class Appointment {
-  final int appointmentId;
-  final int petId;
-  final String petName;
-  final String ownerName;
-  final String date;
-  final String time;
-  final List<ServiceName> serviceNames;
-  final String status;
-  final String duration;
-  final bool isActive;
+    if (shouldCancel != true) {
+      return;
+    }
 
-  Appointment({
-    required this.appointmentId,
-    required this.petId,
-    required this.petName,
-    required this.ownerName,
-    required this.date,
-    required this.time,
-    required this.serviceNames,
-    required this.status,
-    required this.duration,
-    required this.isActive,
-  });
+    try {
+      print('Cancelling appointment ID: ${appointment.appointmentId}');
+      print('Appointment status: ${appointment.status}');
 
-  factory Appointment.fromJson(Map<String, dynamic> json) {
-    return Appointment(
-      appointmentId: json['appointmentId'] ?? 0,
-      petId: json['petId'] ?? 0,
-      petName: json['petName'] ?? '',
-      ownerName: json['ownerName'] ?? '',
-      date: json['date'] ?? '',
-      time: json['time'] ?? '',
-      serviceNames:
-          (json['serviceNames'] as List<dynamic>?)
-              ?.map((service) => ServiceName.fromJson(service))
-              .toList() ??
-          [],
-      status: json['status'] ?? '',
-      duration: json['duration'] ?? '',
-      isActive: json['isActive'] ?? false,
-    );
-  }
-}
+      await AppointmentService.cancelAppointment(appointment.appointmentId);
 
-class ServiceName {
-  final int id;
-  final String name;
-  final String description;
+      setState(() {
+        final index = _appointments.indexWhere(
+          (a) => a.appointmentId == appointment.appointmentId,
+        );
+        if (index != -1) {
+          _appointments[index] = Appointment(
+            appointmentId: appointment.appointmentId,
+            petId: appointment.petId,
+            petName: appointment.petName,
+            ownerName: appointment.ownerName,
+            date: appointment.date,
+            time: appointment.time,
+            serviceNames: appointment.serviceNames,
+            status: 'Cancelled',
+            duration: appointment.duration,
+            isActive: false,
+          );
 
-  ServiceName({
-    required this.id,
-    required this.name,
-    required this.description,
-  });
+          print(
+            'Updated appointment ${appointment.appointmentId} status to: Cancelled',
+          );
+          print(
+            'Current appointments statuses: ${_appointments.map((a) => '${a.appointmentId}:${a.status}').toList()}',
+          );
+        } else {
+          print(
+            'Could not find appointment ${appointment.appointmentId} in local list',
+          );
+        }
+      });
 
-  factory ServiceName.fromJson(Map<String, dynamic> json) {
-    return ServiceName(
-      id: json['id'] ?? json['serviceId'] ?? 0,
-      name: json['name'] ?? '',
-      description: json['description'] ?? '',
-    );
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Appointment cancelled successfully'),
+          backgroundColor: Colors.green,
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    } catch (e) {
+      print('Error cancelling appointment: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to cancel appointment: $e'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    }
   }
 }

@@ -5,6 +5,8 @@ namespace eVetCare.Model.SearchObjects
 	{
         public string? PetName { get; set; }
 
+        public int? PetId { get; set; }
+
         public int? AppointmentId { get; set; }
 
         public DateTime? Date { get; set; }

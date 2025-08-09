@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import '../utils/authorization.dart';
-import 'dart:convert';
-import 'package:http/http.dart' as http;
+import '../models/notification.dart';
+import '../services/notification_service.dart';
 
 class NotificationsPage extends StatefulWidget {
   const NotificationsPage({super.key});
@@ -27,39 +26,14 @@ class _NotificationsPageState extends State<NotificationsPage> {
     });
 
     try {
-      if (Authorization.userId == null) {
-        throw Exception('User ID not found');
-      }
+      final notifications = await NotificationService.getNotifications();
 
-      final response = await http.get(
-        Uri.parse(
-          'http://10.0.2.2:5081/Notification/user/${Authorization.userId}/unread',
-        ),
-        headers: {
-          'Authorization': 'Bearer ${Authorization.token}',
-          'Content-Type': 'application/json',
-        },
-      );
+      setState(() {
+        _notifications = notifications;
+        _isLoading = false;
+      });
 
-      print(
-        'Notifications API Response: ${response.statusCode} - ${response.body}',
-      );
-
-      if (response.statusCode == 200) {
-        final List<dynamic> responseData = json.decode(response.body);
-
-        setState(() {
-          _notifications = responseData.map((notification) {
-            return NotificationItem.fromJson(notification);
-          }).toList();
-        });
-
-        print('Loaded ${_notifications.length} notifications');
-      } else {
-        throw Exception(
-          'Failed to load notifications: ${response.statusCode} - ${response.body}',
-        );
-      }
+      print('Loaded ${_notifications.length} notifications');
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -69,18 +43,18 @@ class _NotificationsPageState extends State<NotificationsPage> {
           ),
         );
       }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
+      setState(() {
+        _isLoading = false;
+      });
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final filteredNotifications = _getFilteredNotifications();
+    final filteredNotifications = NotificationService.filterByType(
+      _notifications,
+      _selectedFilter,
+    );
 
     return Scaffold(
       appBar: AppBar(
@@ -104,15 +78,13 @@ class _NotificationsPageState extends State<NotificationsPage> {
           ),
           // Mark all as read button
           if (_notifications.any((n) => !n.isRead))
-            TextButton(
+            IconButton(
               onPressed: _markAllAsRead,
-              child: Text(
-                'Mark all read',
-                style: TextStyle(
-                  color: const Color.fromARGB(255, 90, 183, 226),
-                  fontSize: 14,
-                ),
+              icon: Icon(
+                Icons.done_all,
+                color: const Color.fromARGB(255, 90, 183, 226),
               ),
+              tooltip: 'Mark all as read',
             ),
           // Filter button
           PopupMenuButton<String>(
@@ -218,51 +190,8 @@ class _NotificationsPageState extends State<NotificationsPage> {
     );
   }
 
-  List<NotificationItem> _getFilteredNotifications() {
-    switch (_selectedFilter) {
-      case 'Unread':
-        return _notifications.where((n) => !n.isRead).toList();
-      case 'Appointment':
-        return _notifications
-            .where((n) => n.type == NotificationType.appointment)
-            .toList();
-      case 'Health':
-        return _notifications
-            .where((n) => n.type == NotificationType.health)
-            .toList();
-      case 'Payment':
-        return _notifications
-            .where((n) => n.type == NotificationType.payment)
-            .toList();
-      default:
-        return _notifications;
-    }
-  }
-
   Widget _buildEmptyState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.notifications_none, size: 64, color: Colors.grey[400]),
-          const SizedBox(height: 16),
-          Text(
-            'No notifications found',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w500,
-              color: Colors.grey[600],
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'You\'re all caught up!',
-            style: TextStyle(fontSize: 14, color: Colors.grey[500]),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
-    );
+    return const SizedBox.shrink();
   }
 
   Widget _buildNotificationCard(NotificationItem notification) {
@@ -284,11 +213,13 @@ class _NotificationsPageState extends State<NotificationsPage> {
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: _getNotificationColor(notification.type),
+                  color: NotificationService.getNotificationColor(
+                    notification.type,
+                  ),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Icon(
-                  _getNotificationIcon(notification.type),
+                  NotificationService.getNotificationIcon(notification.type),
                   color: Colors.white,
                   size: 20,
                 ),
@@ -318,7 +249,9 @@ class _NotificationsPageState extends State<NotificationsPage> {
                           ),
                         ),
                         Text(
-                          _formatTimestamp(notification.timestamp),
+                          NotificationService.formatTimestamp(
+                            notification.timestamp,
+                          ),
                           style: TextStyle(
                             fontSize: 12,
                             color: Colors.grey[500],
@@ -360,6 +293,27 @@ class _NotificationsPageState extends State<NotificationsPage> {
                               ),
                             ),
                           ),
+                          if (notification.type ==
+                              NotificationType.appointment) ...[
+                            const Spacer(),
+                            TextButton(
+                              onPressed: () => _cancelAppointment(notification),
+                              style: TextButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 4,
+                                ),
+                                minimumSize: Size.zero,
+                              ),
+                              child: Text(
+                                'Cancel appointment',
+                                style: TextStyle(
+                                  color: Colors.red,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ),
+                          ],
                         ],
                       ),
                     ],
@@ -384,47 +338,6 @@ class _NotificationsPageState extends State<NotificationsPage> {
     );
   }
 
-  Color _getNotificationColor(NotificationType type) {
-    switch (type) {
-      case NotificationType.appointment:
-        return const Color.fromARGB(255, 90, 183, 226);
-      case NotificationType.health:
-        return Colors.green;
-      case NotificationType.payment:
-        return Colors.orange;
-      case NotificationType.service:
-        return Colors.purple;
-    }
-  }
-
-  IconData _getNotificationIcon(NotificationType type) {
-    switch (type) {
-      case NotificationType.appointment:
-        return Icons.calendar_today;
-      case NotificationType.health:
-        return Icons.favorite;
-      case NotificationType.payment:
-        return Icons.payment;
-      case NotificationType.service:
-        return Icons.local_hospital;
-    }
-  }
-
-  String _formatTimestamp(DateTime timestamp) {
-    final now = DateTime.now();
-    final difference = now.difference(timestamp);
-
-    if (difference.inMinutes < 60) {
-      return '${difference.inMinutes}m ago';
-    } else if (difference.inHours < 24) {
-      return '${difference.inHours}h ago';
-    } else if (difference.inDays < 7) {
-      return '${difference.inDays}d ago';
-    } else {
-      return '${timestamp.month}/${timestamp.day}/${timestamp.year}';
-    }
-  }
-
   Future<void> _markAsRead(NotificationItem notification) async {
     try {
       print('Marking notification ${notification.notificationId} as read');
@@ -432,54 +345,35 @@ class _NotificationsPageState extends State<NotificationsPage> {
         'Notification details: ${notification.notificationId}, ${notification.message}',
       );
 
-      final response = await http.put(
-        Uri.parse(
-          'http://10.0.2.2:5081/Notification/${notification.notificationId}/mark-as-read',
-        ),
-        headers: {
-          'Authorization': 'Bearer ${Authorization.token}',
-          'Content-Type': 'application/json',
-        },
-      );
+      await NotificationService.markAsRead(notification.notificationId);
 
-      print(
-        'Mark as read API Response: ${response.statusCode} - ${response.body}',
-      );
-
-      // Accept both 200 and 204 as success responses
-      if (response.statusCode == 200 || response.statusCode == 204) {
-        setState(() {
-          final index = _notifications.indexWhere(
-            (n) => n.notificationId == notification.notificationId,
+      setState(() {
+        final index = _notifications.indexWhere(
+          (n) => n.notificationId == notification.notificationId,
+        );
+        if (index != -1) {
+          _notifications[index] = NotificationItem(
+            notificationId: notification.notificationId,
+            userId: notification.userId,
+            message: notification.message,
+            dateTimeSent: notification.dateTimeSent,
+            isRead: true,
           );
-          if (index != -1) {
-            _notifications[index] = NotificationItem(
-              notificationId: notification.notificationId,
-              userId: notification.userId,
-              message: notification.message,
-              dateTimeSent: notification.dateTimeSent,
-              isRead: true,
-            );
-            print('Updated notification at index $index to read status');
-          } else {
-            print(
-              'Notification not found in list for ID: ${notification.notificationId}',
-            );
-          }
-        });
+          print('Updated notification at index $index to read status');
+        } else {
+          print(
+            'Notification not found in list for ID: ${notification.notificationId}',
+          );
+        }
+      });
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Marked "${notification.title}" as read'),
-            backgroundColor: Colors.green,
-            duration: const Duration(seconds: 1),
-          ),
-        );
-      } else {
-        throw Exception(
-          'Failed to mark notification as read: ${response.statusCode} - ${response.body}',
-        );
-      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Marked "${notification.title}" as read'),
+          backgroundColor: Colors.green,
+          duration: const Duration(seconds: 1),
+        ),
+      );
     } catch (e) {
       print('Error marking notification as read: $e');
       if (mounted) {
@@ -513,23 +407,10 @@ class _NotificationsPageState extends State<NotificationsPage> {
       }
 
       // Mark each unread notification as read via API
-      for (final notification in unreadNotifications) {
-        final response = await http.put(
-          Uri.parse(
-            'http://10.0.2.2:5081/Notification/${notification.notificationId}/mark-as-read',
-          ),
-          headers: {
-            'Authorization': 'Bearer ${Authorization.token}',
-            'Content-Type': 'application/json',
-          },
-        );
-
-        if (response.statusCode != 200 && response.statusCode != 204) {
-          throw Exception(
-            'Failed to mark notification ${notification.notificationId} as read: ${response.statusCode}',
-          );
-        }
-      }
+      final unreadIds = unreadNotifications
+          .map((n) => n.notificationId)
+          .toList();
+      await NotificationService.markMultipleAsRead(unreadIds);
 
       // Update UI state
       setState(() {
@@ -567,66 +448,80 @@ class _NotificationsPageState extends State<NotificationsPage> {
       }
     }
   }
-}
 
-class NotificationItem {
-  final int notificationId;
-  final int userId;
-  final String message;
-  final DateTime dateTimeSent;
-  final bool isRead;
-
-  NotificationItem({
-    required this.notificationId,
-    required this.userId,
-    required this.message,
-    required this.dateTimeSent,
-    required this.isRead,
-  });
-
-  factory NotificationItem.fromJson(Map<String, dynamic> json) {
-    return NotificationItem(
-      notificationId: json['notificationId'] ?? 0,
-      userId: json['userId'] ?? 0,
-      message: json['message'] ?? '',
-      dateTimeSent:
-          DateTime.tryParse(json['dateTimeSent'] ?? '') ?? DateTime.now(),
-      isRead: json['isRead'] ?? false,
+  Future<void> _cancelAppointment(NotificationItem notification) async {
+    // Show confirmation dialog
+    final shouldCancel = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Cancel Appointment'),
+          content: Text(
+            'Are you sure you want to cancel the appointment?\n\n${notification.message}',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('No'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Yes, Cancel'),
+            ),
+          ],
+        );
+      },
     );
-  }
 
-  // Helper getters for backward compatibility
-  int get id => notificationId;
-  String get title => _extractTitleFromMessage();
-  DateTime get timestamp => dateTimeSent;
-  NotificationType get type => _determineTypeFromMessage();
-
-  String _extractTitleFromMessage() {
-    if (message.toLowerCase().contains('reminder')) {
-      return 'Appointment Reminder';
-    } else if (message.toLowerCase().contains('confirmed')) {
-      return 'Appointment Confirmed';
-    } else if (message.toLowerCase().contains('cancelled')) {
-      return 'Appointment Cancelled';
-    } else if (message.toLowerCase().contains('payment')) {
-      return 'Payment Update';
-    } else {
-      return 'Notification';
+    if (shouldCancel != true) {
+      return;
     }
-  }
 
-  NotificationType _determineTypeFromMessage() {
-    if (message.toLowerCase().contains('appointment')) {
-      return NotificationType.appointment;
-    } else if (message.toLowerCase().contains('payment')) {
-      return NotificationType.payment;
-    } else if (message.toLowerCase().contains('health') ||
-        message.toLowerCase().contains('vaccination')) {
-      return NotificationType.health;
-    } else {
-      return NotificationType.service;
+    try {
+      // Extract appointment ID from notification message
+      final appointmentId = NotificationService.extractAppointmentIdFromMessage(
+        notification.message,
+      );
+
+      if (appointmentId == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Could not find appointment ID in notification'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
+      print('Cancelling appointment ID: $appointmentId');
+
+      await NotificationService.cancelAppointment(appointmentId);
+
+      // Mark the notification as read after successful cancellation
+      await _markAsRead(notification);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Appointment cancelled successfully'),
+          backgroundColor: Colors.green,
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    } catch (e) {
+      print('Error cancelling appointment: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to cancel appointment: $e'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
     }
   }
 }
-
-enum NotificationType { appointment, health, payment, service }

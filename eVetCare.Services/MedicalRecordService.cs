@@ -33,6 +33,11 @@ namespace eVetCare.Services
                 queryFilter = queryFilter.Where(x => x.Appointment.AppointmentId.Equals(search.AppointmentId));
             }
 
+            if (search.PetId != null)
+            {
+                queryFilter = queryFilter.Where(x => x.PetId.Equals(search.PetId));
+            }
+
             if (search.Date != null)
             {
                 queryFilter = queryFilter.Where(x => x.Date.Equals(search.Date));

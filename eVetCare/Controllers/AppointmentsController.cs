@@ -79,7 +79,6 @@ namespace eVetCare.API.Controllers
         }
 
         [HttpPut("{id}/cancel")]
-        [Authorize(Roles = "Admin")]
         public IActionResult Cancel(int id)
         {
             var appointmentService = (IAppointmentService)_service;

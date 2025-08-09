@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
-import '../utils/authorization.dart';
-import 'appointment_history_page.dart';
-import 'dart:convert';
-import 'package:http/http.dart' as http;
+import '../models/appointment.dart';
+import '../services/appointment_service.dart';
 
 class EditAppointmentPage extends StatefulWidget {
   final Appointment appointment;
@@ -113,89 +111,31 @@ class _EditAppointmentPageState extends State<EditAppointmentPage> {
   }
 
   Future<void> _loadPets() async {
-    if (Authorization.userId == null) {
-      throw Exception('User ID not found');
-    }
-
-    final response = await http.get(
-      Uri.parse('http://10.0.2.2:5081/Pets?OwnerId=${Authorization.userId}'),
-      headers: {
-        'Authorization': 'Bearer ${Authorization.token}',
-        'Content-Type': 'application/json',
-      },
-    );
-
-    if (response.statusCode == 200) {
-      final dynamic responseData = json.decode(response.body);
-
-      List<dynamic> petsData;
-      if (responseData is List) {
-        petsData = responseData;
-      } else if (responseData is Map && responseData.containsKey('result')) {
-        petsData = responseData['result'] ?? [];
-      } else if (responseData is Map &&
-          responseData.containsKey('resultList')) {
-        petsData = responseData['resultList'] ?? [];
-      } else {
-        petsData = [];
-      }
-
-      setState(() {
-        _pets = petsData.cast<Map<String, dynamic>>();
-      });
-    } else {
-      throw Exception(
-        'Failed to load pets: ${response.statusCode} - ${response.body}',
-      );
-    }
+    final pets = await AppointmentService.getPets();
+    setState(() {
+      _pets = pets;
+    });
   }
 
   Future<void> _loadServices() async {
-    final response = await http.get(
-      Uri.parse('http://10.0.2.2:5081/Services'),
-      headers: {
-        'Authorization': 'Bearer ${Authorization.token}',
-        'Content-Type': 'application/json',
-      },
-    );
+    final services = await AppointmentService.getServices();
+    setState(() {
+      _services = services;
+    });
 
-    if (response.statusCode == 200) {
-      final dynamic responseData = json.decode(response.body);
-
-      List<dynamic> servicesData;
-      if (responseData is List) {
-        servicesData = responseData;
-      } else if (responseData is Map && responseData.containsKey('result')) {
-        servicesData = responseData['result'] ?? [];
-      } else if (responseData is Map &&
-          responseData.containsKey('resultList')) {
-        servicesData = responseData['resultList'] ?? [];
-      } else {
-        servicesData = [];
-      }
-
-      setState(() {
-        _services = servicesData.cast<Map<String, dynamic>>();
-      });
-
-      // Match service names with their IDs
-      _matchServiceNamesWithIds();
-    } else {
-      throw Exception(
-        'Failed to load services: ${response.statusCode} - ${response.body}',
-      );
-    }
+    // Match service names with their IDs
+    _matchServiceNamesWithIds();
   }
 
   void _matchServiceNamesWithIds() {
     final List<int> matchedIds = [];
-    
+
     for (String serviceName in _selectedServiceNames) {
       final service = _services.firstWhere(
         (s) => (s['name'] ?? '').toLowerCase() == serviceName.toLowerCase(),
         orElse: () => <String, dynamic>{},
       );
-      
+
       if (service.isNotEmpty) {
         final serviceId = service['serviceId'] ?? service['id'];
         if (serviceId != null) {
@@ -203,24 +143,10 @@ class _EditAppointmentPageState extends State<EditAppointmentPage> {
         }
       }
     }
-    
+
     setState(() {
       _selectedServiceIds = matchedIds;
     });
-  }
-
-  String _formatDuration(String duration) {
-    final parts = duration.split(':');
-    final hours = int.parse(parts[0]);
-    final minutes = int.parse(parts[1]);
-
-    if (hours == 0) {
-      return '${minutes} minutes';
-    } else if (minutes == 0) {
-      return '${hours} hour${hours > 1 ? 's' : ''}';
-    } else {
-      return '${hours}h ${minutes}m';
-    }
   }
 
   @override
@@ -405,21 +331,21 @@ class _EditAppointmentPageState extends State<EditAppointmentPage> {
                 Wrap(
                   spacing: 8,
                   runSpacing: 8,
-                                     children: _selectedServiceIds.asMap().entries.map((entry) {
-                     final index = entry.key;
-                     final serviceId = entry.value;
-                     final serviceName = index < _selectedServiceNames.length 
-                         ? _selectedServiceNames[index] 
-                         : 'Unknown Service';
-                     
-                     return Chip(
-                       label: Text(serviceName),
-                                             onDeleted: () {
-                         setState(() {
-                           _selectedServiceIds.removeAt(index);
-                           _selectedServiceNames.removeAt(index);
-                         });
-                       },
+                  children: _selectedServiceIds.asMap().entries.map((entry) {
+                    final index = entry.key;
+                    final serviceId = entry.value;
+                    final serviceName = index < _selectedServiceNames.length
+                        ? _selectedServiceNames[index]
+                        : 'Unknown Service';
+
+                    return Chip(
+                      label: Text(serviceName),
+                      onDeleted: () {
+                        setState(() {
+                          _selectedServiceIds.removeAt(index);
+                          _selectedServiceNames.removeAt(index);
+                        });
+                      },
                       backgroundColor: const Color.fromARGB(255, 90, 183, 226),
                       labelStyle: const TextStyle(color: Colors.white),
                     );
@@ -438,12 +364,11 @@ class _EditAppointmentPageState extends State<EditAppointmentPage> {
                     Icons.keyboard_arrow_down,
                     color: Colors.grey[600],
                   ),
-                                     items: _services
-                       .where(
-                         (service) => !_selectedServiceNames.contains(
-                           service['name'],
-                         ),
-                       )
+                  items: _services
+                      .where(
+                        (service) =>
+                            !_selectedServiceNames.contains(service['name']),
+                      )
                       .map((service) {
                         final serviceId = service['serviceId'] ?? service['id'];
                         final serviceName =
@@ -458,20 +383,22 @@ class _EditAppointmentPageState extends State<EditAppointmentPage> {
                         );
                       })
                       .toList(),
-                                     onChanged: (int? value) {
-                     if (value != null) {
-                       setState(() {
-                         final service = _services.firstWhere(
-                           (s) => (s['serviceId'] ?? s['id']) == value,
-                           orElse: () => <String, dynamic>{},
-                         );
-                         if (service.isNotEmpty) {
-                           _selectedServiceIds.add(value);
-                           _selectedServiceNames.add(service['name'] ?? 'Unknown Service');
-                         }
-                       });
-                     }
-                   },
+                  onChanged: (int? value) {
+                    if (value != null) {
+                      setState(() {
+                        final service = _services.firstWhere(
+                          (s) => (s['serviceId'] ?? s['id']) == value,
+                          orElse: () => <String, dynamic>{},
+                        );
+                        if (service.isNotEmpty) {
+                          _selectedServiceIds.add(value);
+                          _selectedServiceNames.add(
+                            service['name'] ?? 'Unknown Service',
+                          );
+                        }
+                      });
+                    }
+                  },
                 ),
               ),
             ],
@@ -510,7 +437,7 @@ class _EditAppointmentPageState extends State<EditAppointmentPage> {
                 return DropdownMenuItem<String>(
                   value: duration,
                   child: Text(
-                    _formatDuration(duration),
+                    AppointmentService.formatDuration(duration),
                     style: TextStyle(color: Colors.grey[800]),
                   ),
                 );
@@ -644,42 +571,17 @@ class _EditAppointmentPageState extends State<EditAppointmentPage> {
   }
 
   Future<void> _handleSubmit() async {
-    if (_selectedPetId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please select a pet'),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return;
-    }
+    // Validate form using service
+    final validationError = AppointmentService.validateAppointmentData(
+      petId: _selectedPetId,
+      serviceIds: _selectedServiceIds,
+      date: _selectedDate,
+      time: _selectedTime,
+    );
 
-    if (_selectedServiceIds.isEmpty) {
+    if (validationError != null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please select at least one service'),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return;
-    }
-
-    if (_selectedDate == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please select a date'),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return;
-    }
-
-    if (_selectedTime == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please select a time'),
-          backgroundColor: Colors.red,
-        ),
+        SnackBar(content: Text(validationError), backgroundColor: Colors.red),
       );
       return;
     }
@@ -689,50 +591,28 @@ class _EditAppointmentPageState extends State<EditAppointmentPage> {
     });
 
     try {
-      final dateTime = DateTime(
-        _selectedDate!.year,
-        _selectedDate!.month,
-        _selectedDate!.day,
-        _selectedTime!.hour,
-        _selectedTime!.minute,
+      // Prepare appointment data using service
+      final appointmentData = AppointmentService.prepareAppointmentData(
+        petId: _selectedPetId!,
+        date: _selectedDate!,
+        time: _selectedTime!,
+        duration: _selectedDuration,
+        serviceIds: _selectedServiceIds,
       );
 
-      final appointmentData = {
-        "petId": _selectedPetId,
-        "date": dateTime.toIso8601String(),
-        "time":
-            "${_selectedTime!.hour.toString().padLeft(2, '0')}:${_selectedTime!.minute.toString().padLeft(2, '0')}:00",
-        "duration": _selectedDuration,
-        "serviceIds": _selectedServiceIds,
-        "appointmentStatus": 1,
-        "createdByAdmin": false,
-      };
-
-      final response = await http.put(
-        Uri.parse(
-          'http://10.0.2.2:5081/Appointments/${widget.appointment.appointmentId}',
-        ),
-        headers: {
-          'Authorization': 'Bearer ${Authorization.token}',
-          'Content-Type': 'application/json',
-        },
-        body: json.encode(appointmentData),
+      await AppointmentService.updateAppointment(
+        widget.appointment.appointmentId,
+        appointmentData,
       );
 
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Appointment updated successfully!'),
-              backgroundColor: Colors.green,
-            ),
-          );
-          Navigator.pop(context, true); // Return true to indicate success
-        }
-      } else {
-        throw Exception(
-          'Failed to update appointment: ${response.statusCode} - ${response.body}',
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Appointment updated successfully!'),
+            backgroundColor: Colors.green,
+          ),
         );
+        Navigator.pop(context, true); // Return true to indicate success
       }
     } catch (e) {
       if (mounted) {

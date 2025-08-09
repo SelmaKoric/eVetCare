@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import '../utils/authorization.dart';
+import '../models/appointment.dart';
+import '../services/appointment_service.dart';
 import 'appointment_history_page.dart';
-import 'dart:convert';
-import 'package:http/http.dart' as http;
+import 'payment_page.dart';
 
 class BookAppointmentPage extends StatefulWidget {
   final Appointment? editingAppointment;
@@ -74,117 +74,19 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
   }
 
   Future<void> _loadPets() async {
-    if (Authorization.userId == null) {
-      throw Exception('User ID not found');
-    }
-
-    final response = await http.get(
-      Uri.parse('http://10.0.2.2:5081/Pets?OwnerId=${Authorization.userId}'),
-      headers: {
-        'Authorization': 'Bearer ${Authorization.token}',
-        'Content-Type': 'application/json',
-      },
-    );
-
-    print('Pets API Response: ${response.statusCode} - ${response.body}');
-
-    if (response.statusCode == 200) {
-      final dynamic responseData = json.decode(response.body);
-
-      // Handle different response structures
-      List<dynamic> petsData;
-      if (responseData is List) {
-        petsData = responseData;
-      } else if (responseData is Map && responseData.containsKey('result')) {
-        petsData = responseData['result'] ?? [];
-      } else if (responseData is Map &&
-          responseData.containsKey('resultList')) {
-        petsData = responseData['resultList'] ?? [];
-      } else {
-        petsData = [];
-      }
-
-      setState(() {
-        _pets = petsData.cast<Map<String, dynamic>>();
-      });
-
-      print('Loaded ${_pets.length} pets');
-    } else {
-      throw Exception(
-        'Failed to load pets: ${response.statusCode} - ${response.body}',
-      );
-    }
+    final pets = await AppointmentService.getPets();
+    setState(() {
+      _pets = pets;
+    });
+    print('Loaded ${_pets.length} pets');
   }
 
   Future<void> _loadServices() async {
-    final response = await http.get(
-      Uri.parse('http://10.0.2.2:5081/Services'),
-      headers: {
-        'Authorization': 'Bearer ${Authorization.token}',
-        'Content-Type': 'application/json',
-      },
-    );
-
-    print('Services API Response: ${response.statusCode} - ${response.body}');
-
-    if (response.statusCode == 200) {
-      final dynamic responseData = json.decode(response.body);
-
-      // Handle different response structures
-      List<dynamic> servicesData;
-      if (responseData is List) {
-        servicesData = responseData;
-      } else if (responseData is Map && responseData.containsKey('result')) {
-        servicesData = responseData['result'] ?? [];
-      } else if (responseData is Map &&
-          responseData.containsKey('resultList')) {
-        servicesData = responseData['resultList'] ?? [];
-      } else {
-        servicesData = [];
-      }
-
-      setState(() {
-        _services = servicesData.cast<Map<String, dynamic>>();
-      });
-
-      print('Loaded ${_services.length} services');
-    } else {
-      throw Exception(
-        'Failed to load services: ${response.statusCode} - ${response.body}',
-      );
-    }
-  }
-
-  TimeOfDay? _parseTimeString(String timeString) {
-    try {
-      final parts = timeString.split(' ');
-      final timeParts = parts[0].split(':');
-      final hour = int.parse(timeParts[0]);
-      final minute = int.parse(timeParts[1]);
-      final isPM = parts[1].toUpperCase() == 'PM';
-
-      int adjustedHour = hour;
-      if (isPM && hour != 12) adjustedHour += 12;
-      if (!isPM && hour == 12) adjustedHour = 0;
-
-      return TimeOfDay(hour: adjustedHour, minute: minute);
-    } catch (e) {
-      return null;
-    }
-  }
-
-  String _formatDuration(String duration) {
-    final parts = duration.split(':');
-    final hours = int.parse(parts[0]);
-    final minutes = int.parse(parts[1]);
-
-    if (hours == 0) {
-      return '${minutes} minutes';
-    } else if (minutes == 0) {
-      return '${hours} hour${hours > 1 ? 's' : ''}';
-    } else {
-      return '${hours}h ${minutes}m';
-    }
+    final services = await AppointmentService.getServices();
+    setState(() {
+      _services = services;
+    });
+    print('Loaded ${_services.length} services');
   }
 
   @override
@@ -520,7 +422,7 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
                 return DropdownMenuItem<String>(
                   value: duration,
                   child: Text(
-                    _formatDuration(duration),
+                    AppointmentService.formatDuration(duration),
                     style: TextStyle(color: Colors.grey[800]),
                   ),
                 );
@@ -674,43 +576,17 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
   }
 
   Future<void> _handleSubmit() async {
-    // Validate form
-    if (_selectedPetId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please select a pet'),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return;
-    }
+    // Validate form using service
+    final validationError = AppointmentService.validateAppointmentData(
+      petId: _selectedPetId,
+      serviceIds: _selectedServiceIds,
+      date: _selectedDate,
+      time: _selectedTime,
+    );
 
-    if (_selectedServiceIds.isEmpty) {
+    if (validationError != null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please select at least one service'),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return;
-    }
-
-    if (_selectedDate == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please select a date'),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return;
-    }
-
-    if (_selectedTime == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please select a time'),
-          backgroundColor: Colors.red,
-        ),
+        SnackBar(content: Text(validationError), backgroundColor: Colors.red),
       );
       return;
     }
@@ -720,53 +596,27 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
     });
 
     try {
-      // Format date and time for API
-      final dateTime = DateTime(
-        _selectedDate!.year,
-        _selectedDate!.month,
-        _selectedDate!.day,
-        _selectedTime!.hour,
-        _selectedTime!.minute,
+      // Prepare appointment data using service
+      final appointmentData = AppointmentService.prepareAppointmentData(
+        petId: _selectedPetId!,
+        date: _selectedDate!,
+        time: _selectedTime!,
+        duration: _selectedDuration,
+        serviceIds: _selectedServiceIds,
       );
 
-      final appointmentData = {
-        "petId": _selectedPetId,
-        "date": dateTime.toIso8601String(),
-        "time":
-            "${_selectedTime!.hour.toString().padLeft(2, '0')}:${_selectedTime!.minute.toString().padLeft(2, '0')}:00",
-        "duration": _selectedDuration,
-        "serviceIds": _selectedServiceIds,
-        "appointmentStatus": 1, // Assuming 1 is for "upcoming" or "scheduled"
-        "createdByAdmin": false,
-      };
+      print('Submitting appointment data: $appointmentData');
 
-      print('Submitting appointment data: ${json.encode(appointmentData)}');
-
-      final response = await http.post(
-        Uri.parse('http://10.0.2.2:5081/Appointments'),
-        headers: {
-          'Authorization': 'Bearer ${Authorization.token}',
-          'Content-Type': 'application/json',
-        },
-        body: json.encode(appointmentData),
+      final response = await AppointmentService.createAppointment(
+        appointmentData,
       );
 
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Appointment booked successfully!'),
-              backgroundColor: Colors.green,
-            ),
-          );
+      if (mounted) {
+        // Parse the response to get appointment ID
+        final appointmentId = response['appointmentId'] ?? response['id'] ?? 0;
 
-          // Navigate back to home page
-          Navigator.pop(context);
-        }
-      } else {
-        throw Exception(
-          'Failed to book appointment: ${response.statusCode} - ${response.body}',
-        );
+        // Show payment modal (invoice will be created inside the modal)
+        _showPaymentModal(appointmentId);
       }
     } catch (e) {
       if (mounted) {
@@ -783,6 +633,303 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
           _isSubmitting = false;
         });
       }
+    }
+  }
+
+  void _showPaymentModal(int appointmentId) {
+    // Debug: Print current service IDs
+    print('Creating invoice with service IDs: $_selectedServiceIds');
+    print('Selected service names: $_selectedServiceNames');
+
+    // Create invoice and get the response with actual pricing
+    _createInvoice(appointmentId).then((invoiceData) {
+      if (invoiceData != null) {
+        // Get the actual amount from the invoice response
+        double actualAmount = _getActualAmountFromInvoice(invoiceData);
+        print('Actual amount from invoice: $actualAmount');
+
+        // Store invoice data for payment screen
+        _showPaymentDialog(appointmentId, actualAmount, invoiceData);
+      } else {
+        // Fallback if invoice creation fails - use estimated amount
+        double estimatedAmount = _calculateEstimatedAmount();
+        _showPaymentDialog(appointmentId, estimatedAmount, null);
+      }
+    });
+  }
+
+  void _showPaymentDialog(
+    int appointmentId,
+    double amount,
+    Map<String, dynamic>? invoiceData,
+  ) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Row(
+            children: [
+              Icon(
+                Icons.payment,
+                color: const Color.fromARGB(255, 90, 183, 226),
+                size: 28,
+              ),
+              const SizedBox(width: 8),
+              const Text('Payment'),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Your appointment has been booked successfully!',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.grey[800],
+                ),
+              ),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.grey[50],
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.grey[200]!),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      invoiceData != null
+                          ? 'Total Amount:'
+                          : 'Estimated Amount:',
+                      style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                    ),
+                    Text(
+                      '\$${amount.toStringAsFixed(2)}',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: const Color.fromARGB(255, 90, 183, 226),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Would you like to pay now or later?',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.grey[800],
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                // Navigate back to home page
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text(
+                      'Appointment booked successfully! You can pay later.',
+                    ),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+              },
+              child: Text(
+                'Pay Later',
+                style: TextStyle(color: Colors.grey[600], fontSize: 16),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                // Navigate to payment page
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => PaymentPage(
+                      appointmentId: appointmentId,
+                      petName: _selectedPetName ?? 'Unknown Pet',
+                      serviceNames: _selectedServiceNames.join(', '),
+                      date: _selectedDate != null
+                          ? "${_selectedDate!.month.toString().padLeft(2, '0')}/${_selectedDate!.day.toString().padLeft(2, '0')}/${_selectedDate!.year}"
+                          : 'Unknown Date',
+                      time: _selectedTime != null
+                          ? _selectedTime!.format(context)
+                          : 'Unknown Time',
+                      amount: amount,
+                      invoiceData: invoiceData,
+                    ),
+                  ),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color.fromARGB(255, 90, 183, 226),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: const Text(
+                'Pay Now',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  double _calculateEstimatedAmount() {
+    // Base amount for appointment
+    double baseAmount = 50.0;
+
+    // Add amount per service (you can adjust these values)
+    double serviceAmount = _selectedServiceIds.length * 25.0;
+
+    // Add amount based on duration
+    double durationAmount = 0.0;
+    switch (_selectedDuration) {
+      case "00:30:00":
+        durationAmount = 0.0; // No extra charge for 30 minutes
+        break;
+      case "01:00:00":
+        durationAmount = 10.0; // $10 extra for 1 hour
+        break;
+      case "01:30:00":
+        durationAmount = 20.0; // $20 extra for 1.5 hours
+        break;
+      case "02:00:00":
+        durationAmount = 30.0; // $30 extra for 2 hours
+        break;
+      case "02:30:00":
+        durationAmount = 40.0; // $40 extra for 2.5 hours
+        break;
+      case "03:00:00":
+        durationAmount = 50.0; // $50 extra for 3 hours
+        break;
+    }
+
+    return baseAmount + serviceAmount + durationAmount;
+  }
+
+  double _getActualAmountFromInvoice(Map<String, dynamic> invoiceData) {
+    try {
+      // Try to get the total amount from the invoice response
+      // The field name might vary based on your API response structure
+      double amount = 0.0;
+
+      // Common field names for total amount in invoice responses
+      if (invoiceData.containsKey('totalAmount')) {
+        amount = (invoiceData['totalAmount'] as num).toDouble();
+      } else if (invoiceData.containsKey('amount')) {
+        amount = (invoiceData['amount'] as num).toDouble();
+      } else if (invoiceData.containsKey('total')) {
+        amount = (invoiceData['total'] as num).toDouble();
+      } else if (invoiceData.containsKey('grandTotal')) {
+        amount = (invoiceData['grandTotal'] as num).toDouble();
+      } else if (invoiceData.containsKey('invoiceTotal')) {
+        amount = (invoiceData['invoiceTotal'] as num).toDouble();
+      } else {
+        // If no amount field found, calculate from line items
+        amount = _calculateAmountFromLineItems(invoiceData);
+      }
+
+      print('Extracted amount from invoice: $amount');
+      return amount;
+    } catch (e) {
+      print('Error extracting amount from invoice: $e');
+      // Fallback to estimated amount
+      return _calculateEstimatedAmount();
+    }
+  }
+
+  double _calculateAmountFromLineItems(Map<String, dynamic> invoiceData) {
+    try {
+      double total = 0.0;
+
+      // Look for line items or service details in the invoice
+      List<dynamic> lineItems = [];
+
+      if (invoiceData.containsKey('lineItems')) {
+        lineItems = invoiceData['lineItems'] as List<dynamic>;
+      } else if (invoiceData.containsKey('items')) {
+        lineItems = invoiceData['items'] as List<dynamic>;
+      } else if (invoiceData.containsKey('services')) {
+        lineItems = invoiceData['services'] as List<dynamic>;
+      } else if (invoiceData.containsKey('invoiceItems')) {
+        lineItems = invoiceData['invoiceItems'] as List<dynamic>;
+      }
+
+      for (var item in lineItems) {
+        if (item is Map<String, dynamic>) {
+          double price = 0.0;
+          int quantity = 1;
+
+          // Try different field names for price
+          if (item.containsKey('price')) {
+            price = (item['price'] as num).toDouble();
+          } else if (item.containsKey('amount')) {
+            price = (item['amount'] as num).toDouble();
+          } else if (item.containsKey('cost')) {
+            price = (item['cost'] as num).toDouble();
+          }
+
+          // Try different field names for quantity
+          if (item.containsKey('quantity')) {
+            quantity = (item['quantity'] as num).toInt();
+          } else if (item.containsKey('qty')) {
+            quantity = (item['qty'] as num).toInt();
+          }
+
+          total += price * quantity;
+        }
+      }
+
+      print('Calculated total from line items: $total');
+      return total;
+    } catch (e) {
+      print('Error calculating amount from line items: $e');
+      return 0.0;
+    }
+  }
+
+  Future<Map<String, dynamic>?> _createInvoice(int appointmentId) async {
+    try {
+      // Ensure we have the current service IDs
+      print('_createInvoice called with appointmentId: $appointmentId');
+      print('Current _selectedServiceIds: $_selectedServiceIds');
+      print('Current _selectedServiceNames: $_selectedServiceNames');
+
+      final invoiceData = {
+        "appointmentId": appointmentId,
+        "serviceIds": _selectedServiceIds,
+        "issueDate": DateTime.now().toIso8601String(),
+      };
+
+      print('Creating invoice with data: $invoiceData');
+
+      final response = await AppointmentService.createInvoice(invoiceData);
+
+      print('Invoice created successfully: $response');
+
+      // Store the invoice data for later use in payment screen
+      // You can access this data in the payment screen by passing it as a parameter
+      return response;
+    } catch (e) {
+      print('Error creating invoice: $e');
+      return null;
     }
   }
 }
