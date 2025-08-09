@@ -6,11 +6,13 @@ import 'package:evetcare_mobile/utils/logging.dart';
 
 class LoginResponse {
   final String token;
+  final int userId;
   final String fullName;
   final String role;
 
   LoginResponse({
     required this.token,
+    required this.userId,
     required this.fullName,
     required this.role,
   });
@@ -18,6 +20,7 @@ class LoginResponse {
   factory LoginResponse.fromJson(Map<String, dynamic> json) {
     return LoginResponse(
       token: json['token'],
+      userId: json['userId'],
       fullName: json['fullName'],
       role: json['role'],
     );

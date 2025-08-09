@@ -49,6 +49,11 @@ namespace eVetCare.Services
                 queryFilter = queryFilter.Where(x => x.Pet.PetId == search.PetId.Value);
             }
 
+            if (search.OwnerId.HasValue)
+            {
+                queryFilter = queryFilter.Where(x => x.Pet.OwnerId == search.OwnerId);
+            }
+
             if (search.Date.HasValue)
             {
                 queryFilter = queryFilter.Where(x => x.Date.Date == search.Date.Value.Date);

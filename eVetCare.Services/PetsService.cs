@@ -32,6 +32,11 @@ namespace eVetCare.Services
                     (x.Owner.FirstName + " " + x.Owner.LastName).ToLower().Contains(searchText));
             }
 
+            if (search.OwnerId != null)
+            {
+                queryFilter = queryFilter.Where(x => x.OwnerId == search.OwnerId);
+            }
+
             return queryFilter;
         }
 

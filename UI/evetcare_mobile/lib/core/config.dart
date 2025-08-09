@@ -6,3 +6,6 @@ final baseUrl = Platform.isAndroid
 
 final loginEndpoint = "$baseUrl/api/Auth/login";
 final patientsEndpoint = "$baseUrl/Pets";
+final userInfoEndpoint = "$baseUrl/User";
+final genderEndpoint = "$baseUrl/Gender";
+final speciesEndpoint = "$baseUrl/Species";

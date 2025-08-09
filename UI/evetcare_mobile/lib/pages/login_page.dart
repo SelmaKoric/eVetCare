@@ -41,12 +41,22 @@ class _LoginPageState extends State<LoginPage> {
       );
 
       Authorization.token = result?.token;
+      Authorization.userId = result?.userId;
 
       if (result != null) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => HomePage()),
-        );
+        // Fetch user info after successful login
+        try {
+          final userInfo = await ApiService.getUserInfo(
+            result.userId,
+            result.token,
+          );
+          Authorization.user = userInfo;
+        } catch (e) {
+          // Log the error but don't prevent login
+          print('Failed to fetch user info: $e');
+        }
+
+        Navigator.pushReplacementNamed(context, '/home');
       }
     } catch (e) {
       setState(() {

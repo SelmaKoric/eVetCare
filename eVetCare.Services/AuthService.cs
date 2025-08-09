@@ -41,6 +41,7 @@ namespace eVetCare.Services
             return new LoginResponse
             {
                 Token = token,
+                UserId = user.UserId,
                 FullName = $"{user.FirstName} {user.LastName}",
                 Role = role
             };

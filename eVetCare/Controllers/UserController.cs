@@ -1,5 +1,4 @@
-﻿using System;
-using eVetCare.Model;
+﻿using eVetCare.Model;
 using eVetCare.Model.Requests;
 using eVetCare.Model.SearchObjects;
 using eVetCare.Services.Interfaces;
@@ -14,8 +13,6 @@ namespace eVetCare.API.Controllers
         public UserController(IUserService service) : base(service)
         {
         }
-
-       
     }
 }
 
