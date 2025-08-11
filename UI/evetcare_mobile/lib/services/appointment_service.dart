@@ -6,8 +6,10 @@ import '../utils/authorization.dart';
 class AppointmentService {
   // Get all appointments for the current user
   static Future<List<Appointment>> getAppointments() async {
-    final response = await ApiProvider.get('/Appointments?OwnerId=${Authorization.userId}');
-    
+    final response = await ApiProvider.get(
+      '/Appointments?OwnerId=${Authorization.userId}',
+    );
+
     List<dynamic> appointmentsData;
     if (response is Map && response.containsKey('result')) {
       appointmentsData = response['result'] ?? [];
@@ -23,13 +25,21 @@ class AppointmentService {
   }
 
   // Create a new appointment
-  static Future<Map<String, dynamic>> createAppointment(Map<String, dynamic> appointmentData) async {
+  static Future<Map<String, dynamic>> createAppointment(
+    Map<String, dynamic> appointmentData,
+  ) async {
     return await ApiProvider.createAppointment(appointmentData);
   }
 
   // Update an existing appointment
-  static Future<Map<String, dynamic>> updateAppointment(int appointmentId, Map<String, dynamic> appointmentData) async {
-    return await ApiProvider.put('/Appointments/$appointmentId', appointmentData);
+  static Future<Map<String, dynamic>> updateAppointment(
+    int appointmentId,
+    Map<String, dynamic> appointmentData,
+  ) async {
+    return await ApiProvider.put(
+      '/Appointments/$appointmentId',
+      appointmentData,
+    );
   }
 
   // Cancel an appointment
@@ -38,14 +48,18 @@ class AppointmentService {
   }
 
   // Create an invoice
-  static Future<Map<String, dynamic>> createInvoice(Map<String, dynamic> invoiceData) async {
+  static Future<Map<String, dynamic>> createInvoice(
+    Map<String, dynamic> invoiceData,
+  ) async {
     return await ApiProvider.createInvoice(invoiceData);
   }
 
   // Get pets for the current user
   static Future<List<Map<String, dynamic>>> getPets() async {
-    final response = await ApiProvider.get('/Pets?OwnerId=${Authorization.userId}');
-    
+    final response = await ApiProvider.get(
+      '/Pets?OwnerId=${Authorization.userId}',
+    );
+
     List<dynamic> petsData;
     if (response is List) {
       petsData = response;
@@ -63,7 +77,7 @@ class AppointmentService {
   // Get all services
   static Future<List<Map<String, dynamic>>> getServices() async {
     final response = await ApiProvider.get('/Services');
-    
+
     List<dynamic> servicesData;
     if (response is List) {
       servicesData = response;
@@ -79,9 +93,12 @@ class AppointmentService {
   }
 
   // Filter appointments by status
-  static List<Appointment> filterByStatus(List<Appointment> appointments, String status) {
+  static List<Appointment> filterByStatus(
+    List<Appointment> appointments,
+    String status,
+  ) {
     if (status == 'All') return appointments;
-    
+
     return appointments.where((appointment) {
       final appointmentStatus = appointment.status.trim().toLowerCase();
       final filterStatus = status.trim().toLowerCase();
@@ -113,8 +130,10 @@ class AppointmentService {
     return appointments.where((appointment) {
       try {
         final appointmentDate = DateTime.parse(appointment.date);
-        return appointmentDate.isAfter(startDate.subtract(const Duration(days: 1))) &&
-               appointmentDate.isBefore(endDate.add(const Duration(days: 1)));
+        return appointmentDate.isAfter(
+              startDate.subtract(const Duration(days: 1)),
+            ) &&
+            appointmentDate.isBefore(endDate.add(const Duration(days: 1)));
       } catch (e) {
         return false;
       }
@@ -122,15 +141,25 @@ class AppointmentService {
   }
 
   // Get appointments by pet
-  static List<Appointment> filterByPet(List<Appointment> appointments, int petId) {
-    return appointments.where((appointment) => appointment.petId == petId).toList();
+  static List<Appointment> filterByPet(
+    List<Appointment> appointments,
+    int petId,
+  ) {
+    return appointments
+        .where((appointment) => appointment.petId == petId)
+        .toList();
   }
 
   // Get appointments by service
-  static List<Appointment> filterByService(List<Appointment> appointments, String serviceName) {
+  static List<Appointment> filterByService(
+    List<Appointment> appointments,
+    String serviceName,
+  ) {
     return appointments.where((appointment) {
-      return appointment.serviceNames.any((service) => 
-        service.name.toLowerCase().contains(serviceName.toLowerCase()));
+      return appointment.serviceNames.any(
+        (service) =>
+            service.name.toLowerCase().contains(serviceName.toLowerCase()),
+      );
     }).toList();
   }
 
@@ -140,15 +169,16 @@ class AppointmentService {
     String searchTerm,
   ) {
     if (searchTerm.isEmpty) return appointments;
-    
+
     final lowerSearchTerm = searchTerm.toLowerCase();
-    
+
     return appointments.where((appointment) {
       return appointment.petName.toLowerCase().contains(lowerSearchTerm) ||
-             appointment.ownerName.toLowerCase().contains(lowerSearchTerm) ||
-             appointment.serviceNames.any((service) => 
-               service.name.toLowerCase().contains(lowerSearchTerm)) ||
-             appointment.status.toLowerCase().contains(lowerSearchTerm);
+          appointment.ownerName.toLowerCase().contains(lowerSearchTerm) ||
+          appointment.serviceNames.any(
+            (service) => service.name.toLowerCase().contains(lowerSearchTerm),
+          ) ||
+          appointment.status.toLowerCase().contains(lowerSearchTerm);
     }).toList();
   }
 
@@ -168,7 +198,7 @@ class AppointmentService {
       } else if (difference > 0) {
         return 'In $difference days';
       } else {
-        return '${date.month}/${date.day}/${date.year}';
+        return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
       }
     } catch (e) {
       return dateString;
@@ -254,7 +284,8 @@ class AppointmentService {
     return {
       "petId": petId,
       "date": dateTime.toIso8601String(),
-      "time": "${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}:00",
+      "time":
+          "${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}:00",
       "duration": duration,
       "serviceIds": serviceIds,
       "appointmentStatus": appointmentStatus,
@@ -278,10 +309,18 @@ class AppointmentService {
   // Get appointment statistics
   static Map<String, int> getStatistics(List<Appointment> appointments) {
     int total = appointments.length;
-    int approved = appointments.where((a) => a.status.toLowerCase() == 'approved').length;
-    int completed = appointments.where((a) => a.status.toLowerCase() == 'completed').length;
-    int cancelled = appointments.where((a) => a.status.toLowerCase() == 'cancelled').length;
-    int pending = appointments.where((a) => a.status.toLowerCase() == 'pending').length;
+    int approved = appointments
+        .where((a) => a.status.toLowerCase() == 'approved')
+        .length;
+    int completed = appointments
+        .where((a) => a.status.toLowerCase() == 'completed')
+        .length;
+    int cancelled = appointments
+        .where((a) => a.status.toLowerCase() == 'cancelled')
+        .length;
+    int pending = appointments
+        .where((a) => a.status.toLowerCase() == 'pending')
+        .length;
 
     return {
       'total': total,

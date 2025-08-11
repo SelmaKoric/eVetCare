@@ -13,6 +13,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
   List<NotificationItem> _notifications = [];
   String _selectedFilter = 'All';
   bool _isLoading = true;
+  String? _errorMessage;
 
   @override
   void initState() {
@@ -23,6 +24,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
   Future<void> _loadNotifications() async {
     setState(() {
       _isLoading = true;
+      _errorMessage = null;
     });
 
     try {
@@ -31,21 +33,27 @@ class _NotificationsPageState extends State<NotificationsPage> {
       setState(() {
         _notifications = notifications;
         _isLoading = false;
+        _errorMessage = null;
       });
 
       print('Loaded ${_notifications.length} notifications');
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to load notifications: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
       setState(() {
         _isLoading = false;
+        _errorMessage = e.toString();
       });
+
+      // Don't show SnackBar for 404 errors, let the UI handle it
+      if (!e.toString().contains('404')) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Failed to load notifications: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
     }
   }
 
@@ -119,79 +127,139 @@ class _NotificationsPageState extends State<NotificationsPage> {
           ),
         ],
       ),
-      body: _isLoading
-          ? const Center(
-              child: CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(
-                  Color.fromARGB(255, 90, 183, 226),
-                ),
-              ),
-            )
-          : Column(
-              children: [
-                // Filter indicator
-                if (_selectedFilter != 'All')
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
-                    ),
-                    color: Colors.grey[100],
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.filter_list,
-                          size: 16,
-                          color: Colors.grey[600],
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Showing: $_selectedFilter',
-                          style: TextStyle(
-                            color: Colors.grey[600],
-                            fontSize: 14,
-                          ),
-                        ),
-                        const Spacer(),
-                        TextButton(
-                          onPressed: () {
-                            setState(() {
-                              _selectedFilter = 'All';
-                            });
-                          },
-                          child: Text(
-                            'Clear',
-                            style: TextStyle(
-                              color: const Color.fromARGB(255, 90, 183, 226),
-                              fontSize: 14,
-                            ),
-                          ),
-                        ),
-                      ],
+      body: Column(
+        children: [
+          // Filter indicator
+          if (_selectedFilter != 'All')
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              color: Colors.grey[100],
+              child: Row(
+                children: [
+                  Icon(Icons.filter_list, size: 16, color: Colors.grey[600]),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Showing: $_selectedFilter',
+                    style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                  ),
+                  const Spacer(),
+                  TextButton(
+                    onPressed: () {
+                      setState(() {
+                        _selectedFilter = 'All';
+                      });
+                    },
+                    child: Text(
+                      'Clear',
+                      style: TextStyle(
+                        color: const Color.fromARGB(255, 90, 183, 226),
+                        fontSize: 14,
+                      ),
                     ),
                   ),
-
-                // Notifications list
-                Expanded(
-                  child: filteredNotifications.isEmpty
-                      ? _buildEmptyState()
-                      : ListView.builder(
-                          padding: const EdgeInsets.all(16),
-                          itemCount: filteredNotifications.length,
-                          itemBuilder: (context, index) {
-                            final notification = filteredNotifications[index];
-                            return _buildNotificationCard(notification);
-                          },
-                        ),
-                ),
-              ],
+                ],
+              ),
             ),
+
+          // Notifications list
+          Expanded(child: _buildContent(filteredNotifications)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildContent(List<NotificationItem> filteredNotifications) {
+    if (_isLoading) {
+      return const Center(
+        child: CircularProgressIndicator(
+          valueColor: AlwaysStoppedAnimation<Color>(
+            Color.fromARGB(255, 90, 183, 226),
+          ),
+        ),
+      );
+    }
+
+    if (_errorMessage != null) {
+      return _buildErrorState();
+    }
+
+    if (filteredNotifications.isEmpty) {
+      return _buildEmptyState();
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: filteredNotifications.length,
+      itemBuilder: (context, index) {
+        final notification = filteredNotifications[index];
+        return _buildNotificationCard(notification);
+      },
     );
   }
 
   Widget _buildEmptyState() {
-    return const SizedBox.shrink();
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.notifications_none, size: 64, color: Colors.grey[400]),
+          const SizedBox(height: 16),
+          Text(
+            'No notifications yet',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w500,
+              color: Colors.grey[600],
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'You\'ll see your notifications here when they arrive',
+            style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildErrorState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.error_outline, size: 64, color: Colors.grey[400]),
+          const SizedBox(height: 16),
+          Text(
+            'Unable to load notifications',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w500,
+              color: Colors.grey[600],
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            _errorMessage!.contains('404')
+                ? 'No notifications found'
+                : 'Please check your connection and try again',
+            style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 16),
+          ElevatedButton.icon(
+            onPressed: _loadNotifications,
+            icon: const Icon(Icons.refresh),
+            label: const Text('Try Again'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color.fromARGB(255, 90, 183, 226),
+              foregroundColor: Colors.white,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildNotificationCard(NotificationItem notification) {

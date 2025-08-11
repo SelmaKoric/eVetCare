@@ -4,6 +4,7 @@ import 'add_pet_page.dart';
 import 'book_appointment_page.dart';
 import 'notifications_page.dart';
 import 'medical_records_page.dart';
+import 'pets_page.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -87,18 +88,18 @@ class HomePage extends StatelessWidget {
                 crossAxisSpacing: 16,
                 mainAxisSpacing: 16,
                 children: [
-                  // Add Pet Card
+                  // My Pets Card
                   _buildActionCard(
                     context,
-                    icon: Icons.add,
-                    title: "Add Pet",
-                    subtitle: "Register new pet",
+                    icon: Icons.pets,
+                    title: "My Pets",
+                    subtitle: "Manage pets",
                     color: const Color.fromARGB(255, 90, 183, 226),
                     onTap: () {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => const AddPetPage(),
+                          builder: (context) => const PetsPage(),
                         ),
                       );
                     },

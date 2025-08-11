@@ -1,9 +1,11 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:http/http.dart' as http;
 import '../utils/authorization.dart';
+import '../core/config.dart' as config;
 
 class ApiProvider {
-  static const String baseUrl = 'http://10.0.2.2:5081';
+  static String get baseUrl => config.baseUrl;
 
   // Headers for authenticated requests
   static Map<String, String> get _authHeaders => {

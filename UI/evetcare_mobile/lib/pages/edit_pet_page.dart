@@ -2,29 +2,29 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import '../core/api_service.dart';
-import '../providers/api_provider.dart';
+import '../core/config.dart' as config;
 import '../models/gender.dart';
 import '../models/species.dart';
 import '../models/pet.dart';
 import '../utils/authorization.dart';
 
-class AddPetPage extends StatefulWidget {
-  const AddPetPage({super.key});
+class EditPetPage extends StatefulWidget {
+  final Map<String, dynamic> petData;
+
+  const EditPetPage({super.key, required this.petData});
 
   @override
-  State<AddPetPage> createState() => _AddPetPageState();
+  State<EditPetPage> createState() => _EditPetPageState();
 }
 
-class _AddPetPageState extends State<AddPetPage> {
+class _EditPetPageState extends State<EditPetPage> {
   final _formKey = GlobalKey<FormState>();
 
-  // Pet Information Controllers
   final _petNameController = TextEditingController();
   final _breedController = TextEditingController();
   final _ageController = TextEditingController();
   final _weightController = TextEditingController();
 
-  // Gender dropdown
   List<Gender> _genders = [];
   Gender? _selectedGender;
   bool _loadingGenders = true;
@@ -37,15 +37,38 @@ class _AddPetPageState extends State<AddPetPage> {
   // File picker for photo
   File? _selectedImageFile;
   String? _selectedImageName;
+  String? _existingPhotoUrl;
 
   // Loading state for form submission
   bool _isSubmitting = false;
 
+  int? _tempGenderId;
+  int? _tempSpeciesId;
+
   @override
   void initState() {
     super.initState();
+    _initializePetData();
     _loadGenders();
     _loadSpecies();
+  }
+
+  void _initializePetData() {
+    final petData = widget.petData;
+
+    _petNameController.text = petData['name'] ?? '';
+    _breedController.text = petData['breed'] ?? '';
+    _ageController.text = (petData['age'] ?? 0).toString();
+    final rawWeight = (petData['weight'] ?? 0.0);
+    final displayWeight = (rawWeight is num) ? (rawWeight as num) / 10.0 : 0.0;
+    _weightController.text = displayWeight.toString();
+    _existingPhotoUrl = petData['photoUrl'] ?? petData['photo'];
+
+    final petGenderId = petData['genderId'];
+    final petSpeciesId = petData['speciesId'];
+
+    _tempGenderId = petGenderId;
+    _tempSpeciesId = petSpeciesId;
   }
 
   @override
@@ -64,6 +87,15 @@ class _AddPetPageState extends State<AddPetPage> {
         _genders = genders;
         _loadingGenders = false;
       });
+
+      // Set selected gender based on pet data
+      final petGenderId = widget.petData['genderId'];
+      if (petGenderId != null) {
+        _selectedGender = genders.firstWhere(
+          (gender) => gender.genderId == petGenderId,
+          orElse: () => genders.first,
+        );
+      }
     } catch (e) {
       setState(() {
         _loadingGenders = false;
@@ -86,6 +118,15 @@ class _AddPetPageState extends State<AddPetPage> {
         _species = species;
         _loadingSpecies = false;
       });
+
+      // Set selected species based on pet data
+      final petSpeciesId = widget.petData['speciesId'];
+      if (petSpeciesId != null) {
+        _selectedSpecies = species.firstWhere(
+          (species) => species.speciesId == petSpeciesId,
+          orElse: () => species.first,
+        );
+      }
     } catch (e) {
       setState(() {
         _loadingSpecies = false;
@@ -106,7 +147,7 @@ class _AddPetPageState extends State<AddPetPage> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: const Color.fromARGB(255, 90, 183, 226),
-        title: const Text("Add Pet"),
+        title: const Text("Edit Pet"),
         foregroundColor: Colors.white,
       ),
       body: SingleChildScrollView(
@@ -118,7 +159,7 @@ class _AddPetPageState extends State<AddPetPage> {
             children: [
               // Pet Information Section
               const Text(
-                "Pet Information",
+                "Edit Pet Information",
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
@@ -127,58 +168,19 @@ class _AddPetPageState extends State<AddPetPage> {
               ),
               const SizedBox(height: 16),
 
-              // Pet Name
-              _buildTextField(
-                controller: _petNameController,
-                label: "Pet Name",
-                hint: "e.g., Max, Luna, Buddy",
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Pet name is required';
-                  }
-                  if (value.length < 2) {
-                    return 'Pet name must be at least 2 characters';
-                  }
-                  if (value.length > 50) {
-                    return 'Pet name must be less than 50 characters';
-                  }
-                  if (!RegExp(r'^[a-zA-Z\s]+$').hasMatch(value)) {
-                    return 'Pet name can only contain letters and spaces';
-                  }
-                  return null;
-                },
+              // Display current pet info (read-only)
+              _buildReadOnlyInfo(),
+              const SizedBox(height: 16),
+
+              // Editable fields section
+              const Text(
+                "Editable Fields",
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Color.fromARGB(255, 90, 183, 226),
+                ),
               ),
-              const SizedBox(height: 16),
-
-              // Species Dropdown
-              _buildSpeciesDropdown(),
-              const SizedBox(height: 16),
-
-              // Breed
-              _buildTextField(
-                controller: _breedController,
-                label: "Breed",
-                hint: "e.g., Golden Retriever, Persian Cat, German Shepherd",
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Breed is required';
-                  }
-                  if (value.length < 2) {
-                    return 'Breed must be at least 2 characters';
-                  }
-                  if (value.length > 100) {
-                    return 'Breed must be less than 100 characters';
-                  }
-                  if (!RegExp(r'^[a-zA-Z\s\-]+$').hasMatch(value)) {
-                    return 'Breed can only contain letters, spaces, and hyphens';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-
-              // Gender Dropdown
-              _buildGenderDropdown(),
               const SizedBox(height: 16),
 
               // Age
@@ -257,7 +259,7 @@ class _AddPetPageState extends State<AddPetPage> {
                           ),
                         )
                       : const Text(
-                          "Add Pet",
+                          "Update Pet",
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
@@ -268,6 +270,74 @@ class _AddPetPageState extends State<AddPetPage> {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildReadOnlyInfo() {
+    final petData = widget.petData;
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.grey[50],
+        border: Border.all(color: Colors.grey[300]!),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            "Current Information (Read-only)",
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: Colors.grey,
+            ),
+          ),
+          const SizedBox(height: 12),
+          _buildInfoRow("Name", petData['name'] ?? 'Unknown'),
+          _buildInfoRow(
+            "Species",
+            petData['speciesName'] ??
+                petData['species'] ??
+                petData['SpeciesName'] ??
+                petData['Species'] ??
+                'Unknown',
+          ),
+          _buildInfoRow("Breed", petData['breed'] ?? 'Unknown'),
+          _buildInfoRow(
+            "Gender",
+            petData['genderName'] ??
+                petData['gender'] ??
+                petData['GenderName'] ??
+                petData['Gender'] ??
+                'Unknown',
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInfoRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 80,
+            child: Text(
+              "$label:",
+              style: const TextStyle(
+                fontWeight: FontWeight.w600,
+                color: Colors.grey,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(value, style: const TextStyle(color: Colors.black87)),
+          ),
+        ],
       ),
     );
   }
@@ -444,14 +514,69 @@ class _AddPetPageState extends State<AddPetPage> {
                   style: const TextStyle(fontSize: 12, color: Colors.grey),
                 ),
                 const SizedBox(height: 8),
+              ] else if (_existingPhotoUrl != null &&
+                  _existingPhotoUrl!.isNotEmpty) ...[
+                Container(
+                  width: 100,
+                  height: 100,
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.grey.shade300),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: Image.network(
+                      config.buildImageUrl(_existingPhotoUrl!),
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        print('Image loading error: $error');
+                        print(
+                          'Photo URL: ${config.buildImageUrl(_existingPhotoUrl!)}',
+                        );
+                        return Container(
+                          color: Colors.grey.shade200,
+                          child: const Icon(
+                            Icons.pets,
+                            size: 50,
+                            color: Colors.grey,
+                          ),
+                        );
+                      },
+                      loadingBuilder: (context, child, loadingProgress) {
+                        if (loadingProgress == null) return child;
+                        return Container(
+                          color: Colors.grey.shade200,
+                          child: const Center(
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Color.fromARGB(255, 90, 183, 226),
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  "Current photo",
+                  style: const TextStyle(fontSize: 12, color: Colors.grey),
+                ),
+                const SizedBox(height: 8),
               ],
               Row(
                 children: [
                   Expanded(
                     child: Text(
-                      _selectedImageName ?? "No file chosen",
+                      _selectedImageName ??
+                          _existingPhotoUrl ??
+                          "No file chosen",
                       style: TextStyle(
-                        color: _selectedImageFile != null
+                        color:
+                            (_selectedImageFile != null ||
+                                _existingPhotoUrl != null)
                             ? Colors.black
                             : Colors.grey.shade600,
                       ),
@@ -519,9 +644,7 @@ class _AddPetPageState extends State<AddPetPage> {
   }
 
   Future<void> _handleSubmit() async {
-    if (_formKey.currentState!.validate() &&
-        _selectedGender != null &&
-        _selectedSpecies != null) {
+    if (_formKey.currentState!.validate()) {
       if (Authorization.user == null || Authorization.userId == null) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -539,26 +662,25 @@ class _AddPetPageState extends State<AddPetPage> {
       });
 
       try {
-        // Create Pet object with user data
         final pet = Pet(
           ownerId: Authorization.userId!,
           ownerFirstName: Authorization.user!.firstName,
           ownerLastName: Authorization.user!.lastName,
           ownerEmail: Authorization.user!.email,
           ownerPhoneNumber: Authorization.user!.phoneNumber,
-          name: _petNameController.text,
-          speciesId: _selectedSpecies!.speciesId,
-          breed: _breedController.text,
-          genderId: _selectedGender!.genderId,
+          name: widget.petData['name'] ?? '',
+          speciesId: _tempSpeciesId ?? 1,
+          breed: widget.petData['breed'] ?? '',
+          genderId: _tempGenderId ?? 1,
           age: int.parse(_ageController.text),
-          weight: double.parse(_weightController.text),
-          photo: _selectedImageFile != null
-              ? _selectedImageName
-              : null, // Only include photo if image is selected
+          weight: double.parse(_weightController.text) * 10.0,
+          photo: _selectedImageFile != null ? _selectedImageName : '',
         );
 
-        // Make API call with or without image - always use multipart form data
-        final success = await ApiService.addPet(
+        final petId = widget.petData['petId'] ?? widget.petData['id'];
+
+        final success = await ApiService.updatePet(
+          petId,
           pet,
           imageFile: _selectedImageFile,
         );
@@ -566,19 +688,18 @@ class _AddPetPageState extends State<AddPetPage> {
         if (success && mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Pet added successfully!'),
+              content: Text('Pet updated successfully!'),
               backgroundColor: Colors.green,
             ),
           );
 
-          // Navigate back to home page
-          Navigator.pop(context);
+          Navigator.pop(context, true);
         }
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Failed to add pet: $e'),
+              content: Text('Failed to update pet: $e'),
               backgroundColor: Colors.red,
             ),
           );
@@ -589,19 +710,6 @@ class _AddPetPageState extends State<AddPetPage> {
             _isSubmitting = false;
           });
         }
-      }
-    } else {
-      String errorMessage = '';
-      if (_selectedSpecies == null) {
-        errorMessage = 'Please select a species';
-      } else if (_selectedGender == null) {
-        errorMessage = 'Please select a gender';
-      }
-
-      if (errorMessage.isNotEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(errorMessage), backgroundColor: Colors.red),
-        );
       }
     }
   }

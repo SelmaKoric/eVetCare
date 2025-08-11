@@ -427,7 +427,7 @@ class _AppointmentHistoryPageState extends State<AppointmentHistoryPage> {
                     title: const Text('Date'),
                     subtitle: Text(
                       newDate != null
-                          ? "${newDate!.month}/${newDate!.day}/${newDate!.year}"
+                          ? "${newDate!.day.toString().padLeft(2, '0')}/${newDate!.month.toString().padLeft(2, '0')}/${newDate!.year}"
                           : "Select date",
                     ),
                     onTap: () async {

@@ -481,7 +481,7 @@ class _EditAppointmentPageState extends State<EditAppointmentPage> {
                 Expanded(
                   child: Text(
                     _selectedDate != null
-                        ? "${_selectedDate!.month.toString().padLeft(2, '0')}/${_selectedDate!.day.toString().padLeft(2, '0')}/${_selectedDate!.year}"
+                        ? "${_selectedDate!.day.toString().padLeft(2, '0')}/${_selectedDate!.month.toString().padLeft(2, '0')}/${_selectedDate!.year}"
                         : "Select date",
                     style: TextStyle(
                       color: _selectedDate != null

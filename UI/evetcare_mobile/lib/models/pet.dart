@@ -28,7 +28,7 @@ class Pet {
   });
 
   Map<String, dynamic> toJson() {
-    return {
+    final json = <String, dynamic>{
       'ownerId': ownerId,
       'ownerFirstName': ownerFirstName,
       'ownerLastName': ownerLastName,
@@ -40,7 +40,16 @@ class Pet {
       'genderId': genderId,
       'age': age,
       'weight': weight,
-      if (photo != null) 'photo': photo,
+      'photo':
+          photo ?? '', // Always include photo field, use empty string if null
     };
+
+    print('=== PET TOJSON DEBUG ===');
+    print('Photo value: $photo');
+    print('Photo field in JSON: ${json['photo']}');
+    print('Full JSON: $json');
+    print('============================');
+
+    return json;
   }
 }

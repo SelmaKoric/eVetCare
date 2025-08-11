@@ -466,7 +466,7 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
                 Expanded(
                   child: Text(
                     _selectedDate != null
-                        ? "${_selectedDate!.month.toString().padLeft(2, '0')}/${_selectedDate!.day.toString().padLeft(2, '0')}/${_selectedDate!.year}"
+                        ? "${_selectedDate!.day.toString().padLeft(2, '0')}/${_selectedDate!.month.toString().padLeft(2, '0')}/${_selectedDate!.year}"
                         : "Select date",
                     style: TextStyle(
                       color: _selectedDate != null
@@ -762,7 +762,7 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
                       petName: _selectedPetName ?? 'Unknown Pet',
                       serviceNames: _selectedServiceNames.join(', '),
                       date: _selectedDate != null
-                          ? "${_selectedDate!.month.toString().padLeft(2, '0')}/${_selectedDate!.day.toString().padLeft(2, '0')}/${_selectedDate!.year}"
+                          ? "${_selectedDate!.day.toString().padLeft(2, '0')}/${_selectedDate!.month.toString().padLeft(2, '0')}/${_selectedDate!.year}"
                           : 'Unknown Date',
                       time: _selectedTime != null
                           ? _selectedTime!.format(context)
@@ -923,6 +923,8 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
       final response = await AppointmentService.createInvoice(invoiceData);
 
       print('Invoice created successfully: $response');
+      print('Invoice response type: ${response.runtimeType}');
+      print('Invoice response keys: ${response.keys.toList()}');
 
       // Store the invoice data for later use in payment screen
       // You can access this data in the payment screen by passing it as a parameter

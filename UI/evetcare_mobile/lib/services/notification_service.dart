@@ -107,7 +107,7 @@ class NotificationService {
     } else if (difference.inDays < 7) {
       return '${difference.inDays}d ago';
     } else {
-      return '${timestamp.month}/${timestamp.day}/${timestamp.year}';
+      return '${timestamp.day.toString().padLeft(2, '0')}/${timestamp.month.toString().padLeft(2, '0')}/${timestamp.year}';
     }
   }
 

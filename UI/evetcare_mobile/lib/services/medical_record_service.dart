@@ -10,12 +10,12 @@ class MedicalRecordService {
   // Get medical records for a specific pet
   static Future<List<MedicalRecord>> getMedicalRecords(int petId) async {
     final recordsData = await ApiProvider.getMedicalRecords(petId);
-    
+
     List<MedicalRecord> allRecords = [];
     for (var record in recordsData) {
       allRecords.add(MedicalRecord.fromJson(record));
     }
-    
+
     return allRecords;
   }
 
@@ -55,11 +55,11 @@ class MedicalRecordService {
     return allVaccinations;
   }
 
-  // Format date string to MM/DD/YYYY format
+  // Format date string to DD/MM/YYYY format
   static String formatDate(String dateString) {
     try {
       final date = DateTime.parse(dateString);
-      return '${date.month.toString().padLeft(2, '0')}/${date.day.toString().padLeft(2, '0')}/${date.year}';
+      return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
     } catch (e) {
       return dateString;
     }
@@ -96,8 +96,10 @@ class MedicalRecordService {
     return records.where((record) {
       try {
         final recordDate = DateTime.parse(record.date);
-        return recordDate.isAfter(startDate.subtract(const Duration(days: 1))) &&
-               recordDate.isBefore(endDate.add(const Duration(days: 1)));
+        return recordDate.isAfter(
+              startDate.subtract(const Duration(days: 1)),
+            ) &&
+            recordDate.isBefore(endDate.add(const Duration(days: 1)));
       } catch (e) {
         return false;
       }
@@ -130,17 +132,20 @@ class MedicalRecordService {
     String searchTerm,
   ) {
     if (searchTerm.isEmpty) return records;
-    
+
     final lowerSearchTerm = searchTerm.toLowerCase();
-    
+
     return records.where((record) {
       return record.petName.toLowerCase().contains(lowerSearchTerm) ||
-             record.notes.toLowerCase().contains(lowerSearchTerm) ||
-             record.analysisProvided.toLowerCase().contains(lowerSearchTerm) ||
-             record.diagnoses.any((d) => 
-               d.description.toLowerCase().contains(lowerSearchTerm)) ||
-             record.treatments.any((t) => 
-               t.treatmentDescription.toLowerCase().contains(lowerSearchTerm));
+          record.notes.toLowerCase().contains(lowerSearchTerm) ||
+          record.analysisProvided.toLowerCase().contains(lowerSearchTerm) ||
+          record.diagnoses.any(
+            (d) => d.description.toLowerCase().contains(lowerSearchTerm),
+          ) ||
+          record.treatments.any(
+            (t) =>
+                t.treatmentDescription.toLowerCase().contains(lowerSearchTerm),
+          );
     }).toList();
   }
 }
