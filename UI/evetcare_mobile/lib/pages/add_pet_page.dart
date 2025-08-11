@@ -18,27 +18,22 @@ class AddPetPage extends StatefulWidget {
 class _AddPetPageState extends State<AddPetPage> {
   final _formKey = GlobalKey<FormState>();
 
-  // Pet Information Controllers
   final _petNameController = TextEditingController();
   final _breedController = TextEditingController();
   final _ageController = TextEditingController();
   final _weightController = TextEditingController();
 
-  // Gender dropdown
   List<Gender> _genders = [];
   Gender? _selectedGender;
   bool _loadingGenders = true;
 
-  // Species dropdown
   List<Species> _species = [];
   Species? _selectedSpecies;
   bool _loadingSpecies = true;
 
-  // File picker for photo
   File? _selectedImageFile;
   String? _selectedImageName;
 
-  // Loading state for form submission
   bool _isSubmitting = false;
 
   @override
@@ -539,25 +534,21 @@ class _AddPetPageState extends State<AddPetPage> {
       });
 
       try {
-        // Create Pet object with user data
         final pet = Pet(
           ownerId: Authorization.userId!,
           ownerFirstName: Authorization.user!.firstName,
           ownerLastName: Authorization.user!.lastName,
           ownerEmail: Authorization.user!.email,
-          ownerPhoneNumber: Authorization.user!.phoneNumber,
+          ownerPhoneNumber: Authorization.user!.phoneNumber ?? '',
           name: _petNameController.text,
           speciesId: _selectedSpecies!.speciesId,
           breed: _breedController.text,
           genderId: _selectedGender!.genderId,
           age: int.parse(_ageController.text),
           weight: double.parse(_weightController.text),
-          photo: _selectedImageFile != null
-              ? _selectedImageName
-              : null, // Only include photo if image is selected
+          photo: _selectedImageFile != null ? _selectedImageName : null,
         );
 
-        // Make API call with or without image - always use multipart form data
         final success = await ApiService.addPet(
           pet,
           imageFile: _selectedImageFile,

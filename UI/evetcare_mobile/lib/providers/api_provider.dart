@@ -15,15 +15,26 @@ class ApiProvider {
 
   // Generic HTTP methods
   static Future<dynamic> get(String endpoint) async {
-    final response = await http.get(
-      Uri.parse('$baseUrl$endpoint'),
-      headers: _authHeaders,
-    );
+    print('ApiProvider: Making GET request to: $baseUrl$endpoint');
+    print('ApiProvider: Headers: $_authHeaders');
 
-    if (response.statusCode >= 200 && response.statusCode < 300) {
-      return json.decode(response.body);
-    } else {
-      throw Exception('HTTP ${response.statusCode}: ${response.body}');
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl$endpoint'),
+        headers: _authHeaders,
+      );
+
+      print('ApiProvider: Response status: ${response.statusCode}');
+      print('ApiProvider: Response body: ${response.body}');
+
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        return json.decode(response.body);
+      } else {
+        throw Exception('HTTP ${response.statusCode}: ${response.body}');
+      }
+    } catch (e) {
+      print('ApiProvider: HTTP request failed: $e');
+      rethrow;
     }
   }
 
@@ -89,20 +100,41 @@ class ApiProvider {
   }
 
   static Future<List<Map<String, dynamic>>> getMedicalRecords(int petId) async {
-    final response = await get(
-      '/MedicalRecord?PetId=$petId&IncludeDiagnoses=true&IncludeTreatments=true&IncludeLabResults=true&IncludeVaccinations=true',
-    );
+    print('ApiProvider: Getting medical records for pet ID: $petId');
+    print('ApiProvider: Base URL: $baseUrl');
+    print('ApiProvider: Authorization token: ${Authorization.token}');
+    print('ApiProvider: Authorization userId: ${Authorization.userId}');
 
-    if (response is Map && response.containsKey('result')) {
-      final result = response['result'];
-      if (result is List) {
-        return List<Map<String, dynamic>>.from(result);
+    try {
+      final endpoint =
+          '/MedicalRecord?PetId=$petId&IncludeDiagnoses=true&IncludeTreatments=true&IncludeLabResults=true&IncludeVaccinations=true';
+      print('ApiProvider: Full URL: $baseUrl$endpoint');
+
+      final response = await get(endpoint);
+
+      print('ApiProvider: Raw response type: ${response.runtimeType}');
+      print('ApiProvider: Raw response: $response');
+
+      if (response is Map && response.containsKey('result')) {
+        final result = response['result'];
+        print('ApiProvider: Found result key, type: ${result.runtimeType}');
+        if (result is List) {
+          print('ApiProvider: Returning ${result.length} records from result');
+          return List<Map<String, dynamic>>.from(result);
+        }
+      } else if (response is List) {
+        print(
+          'ApiProvider: Response is List, returning ${response.length} records',
+        );
+        return List<Map<String, dynamic>>.from(response);
       }
-    } else if (response is List) {
-      return List<Map<String, dynamic>>.from(response);
-    }
 
-    return [];
+      print('ApiProvider: No valid data found, returning empty list');
+      return [];
+    } catch (e) {
+      print('ApiProvider: Error getting medical records: $e');
+      rethrow;
+    }
   }
 
   static Future<List<Map<String, dynamic>>> getNotifications() async {

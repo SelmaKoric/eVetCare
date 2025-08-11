@@ -9,14 +9,32 @@ class MedicalRecordService {
 
   // Get medical records for a specific pet
   static Future<List<MedicalRecord>> getMedicalRecords(int petId) async {
-    final recordsData = await ApiProvider.getMedicalRecords(petId);
+    print('MedicalRecordService: Getting medical records for pet ID: $petId');
 
-    List<MedicalRecord> allRecords = [];
-    for (var record in recordsData) {
-      allRecords.add(MedicalRecord.fromJson(record));
+    try {
+      final recordsData = await ApiProvider.getMedicalRecords(petId);
+      print(
+        'MedicalRecordService: Received ${recordsData.length} records from API',
+      );
+
+      List<MedicalRecord> allRecords = [];
+      for (var record in recordsData) {
+        try {
+          allRecords.add(MedicalRecord.fromJson(record));
+        } catch (e) {
+          print('MedicalRecordService: Error parsing record: $e');
+          print('MedicalRecordService: Record data: $record');
+        }
+      }
+
+      print(
+        'MedicalRecordService: Successfully parsed ${allRecords.length} records',
+      );
+      return allRecords;
+    } catch (e) {
+      print('MedicalRecordService: Error getting medical records: $e');
+      rethrow;
     }
-
-    return allRecords;
   }
 
   // Get all diagnoses from all medical records

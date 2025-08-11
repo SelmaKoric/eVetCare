@@ -667,7 +667,7 @@ class _EditPetPageState extends State<EditPetPage> {
           ownerFirstName: Authorization.user!.firstName,
           ownerLastName: Authorization.user!.lastName,
           ownerEmail: Authorization.user!.email,
-          ownerPhoneNumber: Authorization.user!.phoneNumber,
+          ownerPhoneNumber: Authorization.user!.phoneNumber ?? '',
           name: widget.petData['name'] ?? '',
           speciesId: _tempSpeciesId ?? 1,
           breed: widget.petData['breed'] ?? '',

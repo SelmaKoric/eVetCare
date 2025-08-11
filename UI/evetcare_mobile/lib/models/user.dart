@@ -4,7 +4,7 @@ class User {
   final String lastName;
   final String email;
   final String username;
-  final String phoneNumber;
+  final String? phoneNumber;
   final bool isActive;
   final bool isAppUser;
   final List<dynamic> pets;
@@ -15,7 +15,7 @@ class User {
     required this.lastName,
     required this.email,
     required this.username,
-    required this.phoneNumber,
+    this.phoneNumber,
     required this.isActive,
     required this.isAppUser,
     required this.pets,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/medical_record.dart';
 import '../services/medical_record_service.dart';
+import '../utils/authorization.dart';
 
 class MedicalRecordsPage extends StatefulWidget {
   const MedicalRecordsPage({super.key});
@@ -21,7 +22,9 @@ class _MedicalRecordsPageState extends State<MedicalRecordsPage>
   @override
   void initState() {
     super.initState();
+    print('MedicalRecordsPage: initState called');
     _tabController = TabController(length: 5, vsync: this);
+    print('MedicalRecordsPage: Starting to load pets...');
     _loadPets();
   }
 
@@ -32,26 +35,70 @@ class _MedicalRecordsPageState extends State<MedicalRecordsPage>
   }
 
   Future<void> _loadPets() async {
-    try {
-      final pets = await MedicalRecordService.getPets();
+    print('MedicalRecordsPage: _loadPets called');
+    print('MedicalRecordsPage: Current _isLoading state: $_isLoading');
+    print('MedicalRecordsPage: Current _pets length: ${_pets.length}');
 
+    try {
+      print('MedicalRecordsPage: Calling MedicalRecordService.getPets()...');
+      final pets = await MedicalRecordService.getPets();
+      print('MedicalRecordsPage: getPets() returned ${pets.length} pets');
+      print('MedicalRecordsPage: Pets data: $pets');
+
+      print('MedicalRecordsPage: About to call setState...');
       setState(() {
         _pets = pets;
+        print('MedicalRecordsPage: _pets set to ${_pets.length} pets');
         if (_pets.isNotEmpty && _selectedPetId == null) {
           _selectedPetId = _pets.first['petId'];
-          _loadMedicalRecords();
+          print('MedicalRecordsPage: Auto-selected pet ID: $_selectedPetId');
         }
+        print('MedicalRecordsPage: _selectedPetId is now: $_selectedPetId');
       });
+      print('MedicalRecordsPage: setState completed');
+
+      // Load medical records after setState to avoid nested setState calls
+      if (_pets.isNotEmpty && _selectedPetId != null) {
+        print(
+          'MedicalRecordsPage: Pets found and selected, triggering medical records load',
+        );
+        _loadMedicalRecords();
+      } else {
+        // If no pets or no selected pet, stop loading
+        print('MedicalRecordsPage: No pets found or no pet selected');
+        print('MedicalRecordsPage: _pets.isEmpty: ${_pets.isEmpty}');
+        print('MedicalRecordsPage: _selectedPetId: $_selectedPetId');
+        print('MedicalRecordsPage: Setting _isLoading to false...');
+        setState(() {
+          _isLoading = false;
+        });
+        print('MedicalRecordsPage: _isLoading set to false');
+      }
     } catch (e) {
+      print('MedicalRecordsPage: Error loading pets: $e');
       setState(() {
         _error = e.toString();
         _isLoading = false;
       });
+      print('MedicalRecordsPage: Error state set, _isLoading set to false');
     }
   }
 
   Future<void> _loadMedicalRecords() async {
-    if (_selectedPetId == null) return;
+    if (_selectedPetId == null) {
+      print('No pet selected, cannot load medical records');
+      return;
+    }
+
+    // Prevent multiple simultaneous calls
+    if (_isLoading) {
+      print('Medical records already loading, skipping...');
+      return;
+    }
+
+    print('Loading medical records for pet ID: $_selectedPetId');
+    print('Authorization token: ${Authorization.token}');
+    print('Authorization userId: ${Authorization.userId}');
 
     setState(() {
       _isLoading = true;
@@ -59,24 +106,55 @@ class _MedicalRecordsPageState extends State<MedicalRecordsPage>
     });
 
     try {
-      final records = await MedicalRecordService.getMedicalRecords(
-        _selectedPetId!,
-      );
+      print('Calling MedicalRecordService.getMedicalRecords...');
 
-      setState(() {
-        _medicalRecords = records;
-        _isLoading = false;
-      });
+      // Add timeout to prevent infinite loading
+      final records =
+          await MedicalRecordService.getMedicalRecords(_selectedPetId!).timeout(
+            const Duration(seconds: 30),
+            onTimeout: () {
+              print('Medical records request timed out after 30 seconds');
+              throw Exception('Request timed out. Please try again.');
+            },
+          );
+
+      print('Loaded ${records.length} medical records');
+
+      if (mounted) {
+        setState(() {
+          _medicalRecords = records;
+          _isLoading = false;
+        });
+        print(
+          'Medical records loaded successfully, loading state set to false',
+        );
+      } else {
+        print('Widget not mounted, skipping setState');
+      }
     } catch (e) {
-      setState(() {
-        _error = e.toString();
-        _isLoading = false;
-      });
+      print('Error loading medical records: $e');
+      if (mounted) {
+        setState(() {
+          _error = e.toString();
+          _isLoading = false;
+        });
+        print('Error state set, loading state set to false');
+      } else {
+        print('Widget not mounted during error, skipping setState');
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    print('MedicalRecordsPage: build() called');
+    print('MedicalRecordsPage: _isLoading: $_isLoading');
+    print('MedicalRecordsPage: _pets.length: ${_pets.length}');
+    print('MedicalRecordsPage: _error: $_error');
+    print(
+      'MedicalRecordsPage: _medicalRecords.length: ${_medicalRecords.length}',
+    );
+
     return Scaffold(
       appBar: AppBar(
         backgroundColor: const Color.fromARGB(255, 90, 183, 226),
@@ -186,6 +264,29 @@ class _MedicalRecordsPageState extends State<MedicalRecordsPage>
                       ],
                     ),
                   )
+                : _pets.isEmpty
+                ? const Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.pets, size: 64, color: Colors.grey),
+                        SizedBox(height: 16),
+                        Text(
+                          'No pets found',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.grey,
+                          ),
+                        ),
+                        SizedBox(height: 8),
+                        Text(
+                          'Add a pet to view medical records',
+                          style: TextStyle(fontSize: 14, color: Colors.grey),
+                        ),
+                      ],
+                    ),
+                  )
                 : _medicalRecords.isEmpty
                 ? const Center(
                     child: Text(
@@ -218,7 +319,7 @@ class _MedicalRecordsPageState extends State<MedicalRecordsPage>
         return Card(
           margin: const EdgeInsets.only(bottom: 16),
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -271,9 +372,9 @@ class _MedicalRecordsPageState extends State<MedicalRecordsPage>
                   _buildInfoRow('Notes', record.notes),
                 if (record.analysisProvided.isNotEmpty)
                   _buildInfoRow('Analysis', record.analysisProvided),
-                const SizedBox(height: 8),
+                const SizedBox(height: 12),
                 Wrap(
-                  spacing: 8,
+                  spacing: 12,
                   runSpacing: 8,
                   children: [
                     _buildStatChip('Diagnoses', record.diagnoses.length),
@@ -415,12 +516,12 @@ class _MedicalRecordsPageState extends State<MedicalRecordsPage>
 
   Widget _buildInfoRow(String label, String value) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 2),
+      padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
-            width: 80,
+            width: 100,
             child: Text(
               '$label:',
               style: const TextStyle(
@@ -437,10 +538,10 @@ class _MedicalRecordsPageState extends State<MedicalRecordsPage>
 
   Widget _buildStatChip(String label, int count) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
         color: const Color.fromARGB(255, 90, 183, 226).withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: const Color.fromARGB(255, 90, 183, 226),
           width: 1,
