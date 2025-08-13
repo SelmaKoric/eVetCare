@@ -1,8 +1,4 @@
-﻿using System;
-using System.Linq;
-using eVetCare.Model;
-using eVetCare.Model.Requests;
-using eVetCare.Model.SearchObjects;
+﻿using eVetCare.Model.SearchObjects;
 using eVetCare.Services.Database;
 using eVetCare.Services.Interfaces;
 using MapsterMapper;

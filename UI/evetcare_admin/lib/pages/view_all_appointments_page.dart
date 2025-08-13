@@ -2,7 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/appointment.dart';
 import '../models/patient.dart';
+import '../models/medical_record.dart';
 import '../providers/patient_provider.dart';
+
+import '../pages/add_medical_record_modal.dart';
+
 import 'package:intl/intl.dart';
 
 class ViewAllAppointmentsPage extends StatefulWidget {
@@ -18,6 +22,8 @@ class ViewAllAppointmentsPage extends StatefulWidget {
 class _ViewAllAppointmentsScreenState extends State<ViewAllAppointmentsPage> {
   List<Appointment> _appointments = [];
   bool _isLoading = true;
+  Map<int, MedicalRecord?> _medicalRecords =
+      {}; // appointmentId -> medicalRecord
 
   @override
   void initState() {
@@ -31,8 +37,34 @@ class _ViewAllAppointmentsScreenState extends State<ViewAllAppointmentsPage> {
       final data = await provider.getAppointmentsForPatient(
         widget.patient.petId!,
       );
+
+      // Create medical records map from appointment data
+      final Map<int, MedicalRecord?> medicalRecords = {};
+
+      for (final appointment in data) {
+        if (appointment.medicalRecordId != null) {
+          // Create a basic medical record from appointment data
+          medicalRecords[appointment.appointmentId] = MedicalRecord(
+            medicalRecordId: appointment.medicalRecordId!,
+            petId: appointment.petId,
+            petName: appointment.petName,
+            appointmentId: appointment.appointmentId,
+            date: DateTime.parse(appointment.date),
+            notes: null,
+            analysisProvided: null,
+            diagnoses: [],
+            treatments: [],
+            labResults: [],
+            vaccinations: [],
+          );
+        } else {
+          medicalRecords[appointment.appointmentId] = null;
+        }
+      }
+
       setState(() {
         _appointments = data;
+        _medicalRecords = medicalRecords;
         _isLoading = false;
       });
     } catch (e) {
@@ -50,6 +82,87 @@ class _ViewAllAppointmentsScreenState extends State<ViewAllAppointmentsPage> {
     } catch (_) {
       return dateStr;
     }
+  }
+
+  Widget _buildMedicalRecordButton(Appointment appointment) {
+    final existingRecord = _medicalRecords[appointment.appointmentId];
+
+    if (existingRecord != null) {
+      // Show Edit button for existing records
+      return ElevatedButton.icon(
+        onPressed: () =>
+            _showEditMedicalRecordModal(appointment, existingRecord),
+        icon: const Icon(Icons.edit, size: 16),
+        label: const Text("Edit", style: TextStyle(fontSize: 12)),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: const Color(0xFF5AB7E2),
+          foregroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      );
+    } else {
+      // Show Add Note button for appointments without records
+      return ElevatedButton.icon(
+        onPressed: () => _showAddMedicalRecordModal(appointment),
+        icon: const Icon(Icons.note_add, size: 16),
+        label: const Text("Add Note", style: TextStyle(fontSize: 12)),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: const Color(0xFF5AB7E2),
+          foregroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      );
+    }
+  }
+
+  void _showAddMedicalRecordModal(Appointment appointment) {
+    showDialog(
+      context: context,
+      builder: (context) => AddMedicalRecordModal(
+        patient: widget.patient,
+        appointment: appointment,
+      ),
+    ).then((result) {
+      if (result == true) {
+        _loadAppointments(); // Refresh to show the new record
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Medical record added successfully!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    });
+  }
+
+  void _showEditMedicalRecordModal(
+    Appointment appointment,
+    MedicalRecord record,
+  ) {
+    showDialog(
+      context: context,
+      builder: (context) => AddMedicalRecordModal(
+        patient: widget.patient,
+        appointment: appointment,
+        existingRecord: record,
+      ),
+    ).then((result) {
+      if (result == true) {
+        _loadAppointments(); // Refresh to show updated record
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Medical record updated successfully!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    });
   }
 
   @override
@@ -98,6 +211,12 @@ class _ViewAllAppointmentsScreenState extends State<ViewAllAppointmentsPage> {
                         style: TextStyle(fontWeight: FontWeight.bold),
                       ),
                     ),
+                    DataColumn(
+                      label: Text(
+                        "Actions",
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ),
                   ],
                   rows: _appointments.map((appointment) {
                     return DataRow(
@@ -107,7 +226,7 @@ class _ViewAllAppointmentsScreenState extends State<ViewAllAppointmentsPage> {
                         DataCell(
                           Text(
                             appointment.serviceNames.isNotEmpty
-                                ? appointment.serviceNames
+                                ? appointment.serviceNamesString
                                 : "N/A",
                             overflow: TextOverflow.ellipsis,
                             maxLines: 2,
@@ -166,6 +285,7 @@ class _ViewAllAppointmentsScreenState extends State<ViewAllAppointmentsPage> {
                             ],
                           ),
                         ),
+                        DataCell(_buildMedicalRecordButton(appointment)),
                       ],
                     );
                   }).toList(),

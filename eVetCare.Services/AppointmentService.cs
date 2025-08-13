@@ -1,4 +1,5 @@
 ﻿using EasyNetQ;
+using eVetCare.Model;
 using eVetCare.Model.Enums;
 using eVetCare.Model.Messaging;
 using eVetCare.Model.Requests;
@@ -10,6 +11,7 @@ using eVetCare.Services.Interfaces;
 using MapsterMapper;
 using Microsoft.EntityFrameworkCore;
 using System;
+using System.Linq;
 
 namespace eVetCare.Services
 {
@@ -61,13 +63,13 @@ namespace eVetCare.Services
 
             if (search.AppointmentStatusId.HasValue)
             {
-                queryFilter.Where(x => x.AppointmentStatusId == search.AppointmentStatusId.Value);
+                queryFilter = queryFilter.Where(x => x.AppointmentStatusId == search.AppointmentStatusId.Value);
             }
 
             return queryFilter;
         }
 
-        public override void BeforeInsert(AppointmentInsertRequest request, Appointment entity)
+        public override void BeforeInsert(AppointmentInsertRequest request, Database.Appointment entity)
         {
             var newStart = RoundToMinute(request.Date.Date + request.Time);
             var newEnd = newStart + (request.Duration ?? TimeSpan.FromMinutes(30));
@@ -156,7 +158,15 @@ namespace eVetCare.Services
             if (entity == null)
                 return null!;
 
-            return _mapper.Map<Model.Appointment>(entity);
+            var model = _mapper.Map<Model.Appointment>(entity);
+
+            model.MedicalRecordId = _context.MedicalRecords
+                .Where(m => m.AppointmentId == id)
+                .OrderByDescending(m => m.MedicalRecordId)
+                .Select(m => m.MedicalRecordId)
+                .FirstOrDefault();
+
+            return model;
         }
 
         public bool Approve(int id)
@@ -229,13 +239,18 @@ namespace eVetCare.Services
         {
             var entity = base.Insert(request);
 
+            var medicalRecordId = CreateMedicalRecordForAppointment(entity.AppointmentId);
+
             var fullEntity = _context.Appointments
                 .Include(a => a.Pet).ThenInclude(p => p.Owner)
                 .Include(a => a.AppointmentStatus)
                 .Include(a => a.AppointmentServices).ThenInclude(s => s.Service)
                 .FirstOrDefault(a => a.AppointmentId == entity.AppointmentId);
 
-            return _mapper.Map<Model.Appointment>(fullEntity);
+            var model = _mapper.Map<Model.Appointment>(fullEntity);
+            model.MedicalRecordId = medicalRecordId;
+
+            return model;
         }
 
         public override Model.Appointment Update(int id, AppointmentUpdateRequest request)
@@ -249,6 +264,58 @@ namespace eVetCare.Services
                 .FirstOrDefault(a => a.AppointmentId == entity.AppointmentId);
 
             return _mapper.Map<Model.Appointment>(fullEntity);
+        }
+
+        public override GetPaged<Model.Appointment> GetPaged(AppointmentSearchObject search)
+        {
+            var query = _context.Appointments
+                .Include(a => a.Pet).ThenInclude(p => p.Owner)
+                .Include(a => a.AppointmentStatus)
+                .Include(a => a.AppointmentServices).ThenInclude(s => s.Service)
+                .AsQueryable();
+
+            query = Filter(search, query);
+
+            var count = query.Count();
+
+            if (search.Page.HasValue && search.PageSize.HasValue)
+            {
+                query = query
+                    .Skip((search.Page.Value - 1) * search.PageSize.Value)
+                    .Take(search.PageSize.Value);
+            }
+
+            var list = query.ToList();
+
+            var appointmentIds = list.Select(a => a.AppointmentId).ToList();
+
+            var latestByAppointment = _context.MedicalRecords
+                .Where(m => appointmentIds.Contains(m.AppointmentId))
+                .GroupBy(m => m.AppointmentId)
+                .Select(g => new
+                {
+                    AppointmentId = g.Key,
+                    MedicalRecordId = g.OrderByDescending(m => m.MedicalRecordId).First().MedicalRecordId
+                })
+                .ToDictionary(x => x.AppointmentId, x => x.MedicalRecordId);
+
+            var mappedResults = _mapper.Map<List<Model.Appointment>>(list);
+
+            foreach (var m in mappedResults)
+            {
+                if (latestByAppointment.TryGetValue(m.AppointmentId, out var mrId))
+                    m.MedicalRecordId = mrId;
+                else
+                    m.MedicalRecordId = 0;
+            }
+
+            return new GetPaged<Model.Appointment>
+            {
+                Count = count,
+                Result = mappedResults,
+                Page = search.Page ?? 1,
+                PageSize = search.PageSize ?? 10
+            };
         }
 
         public void NotifyOwner(int appointmentId)
@@ -268,7 +335,7 @@ namespace eVetCare.Services
             var servicesText = string.Join(", ", serviceNames);
 
             var message = new AppointmentNotificationMessage
-            { 
+            {
                 AppointmentId = appointment.AppointmentId,
                 PetName = appointment.Pet.Name,
                 OwnerEmail = appointment.Pet.Owner.Email,
@@ -282,6 +349,30 @@ namespace eVetCare.Services
         private static DateTime RoundToMinute(DateTime dt)
         {
             return new DateTime(dt.Year, dt.Month, dt.Day, dt.Hour, dt.Minute, 0);
+        }
+
+        // Creates or returns an existing MedicalRecord for the appointment and returns its ID.
+        private int CreateMedicalRecordForAppointment(int appointmentId)
+        {
+            var appointment = _context.Appointments.FirstOrDefault(a => a.AppointmentId == appointmentId);
+            if (appointment == null)
+                return 0;
+
+            var existing = _context.MedicalRecords.FirstOrDefault(m => m.AppointmentId == appointmentId);
+            if (existing != null)
+                return existing.MedicalRecordId;
+
+            var medicalRecord = new Database.MedicalRecord
+            {
+                AppointmentId = appointmentId,
+                PetId = appointment.PetId,
+                IsActive = true
+            };
+
+            _context.MedicalRecords.Add(medicalRecord);
+            _context.SaveChanges();
+
+            return medicalRecord.MedicalRecordId;
         }
     }
 }

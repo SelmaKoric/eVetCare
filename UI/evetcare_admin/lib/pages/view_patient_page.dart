@@ -1,9 +1,12 @@
 import 'package:evetcare_admin/core/config.dart';
 import 'package:evetcare_admin/models/appointment.dart';
 import 'package:evetcare_admin/models/patient.dart';
+import 'package:evetcare_admin/models/medical_record.dart';
 import 'package:evetcare_admin/pages/medical_history_page.dart';
 import 'package:evetcare_admin/pages/view_all_appointments_page.dart';
+import 'package:evetcare_admin/pages/add_medical_record_modal.dart';
 import 'package:evetcare_admin/providers/patient_provider.dart';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
@@ -20,6 +23,8 @@ class ViewPatientPage extends StatefulWidget {
 class _ViewPatientScreenState extends State<ViewPatientPage> {
   List<Appointment> _appointments = [];
   bool _isLoadingAppointments = true;
+  Map<int, MedicalRecord?> _medicalRecords =
+      {}; // appointmentId -> medicalRecord
 
   @override
   void initState() {
@@ -35,8 +40,34 @@ class _ViewPatientScreenState extends State<ViewPatientPage> {
       );
       final fetchedAppointments = await patientProvider
           .getAppointmentsForPatient(widget.patient.petId!);
+
+      // Create medical records map from appointment data
+      final Map<int, MedicalRecord?> medicalRecords = {};
+
+      for (final appointment in fetchedAppointments) {
+        if (appointment.medicalRecordId != null) {
+          // Create a basic medical record from appointment data
+          medicalRecords[appointment.appointmentId] = MedicalRecord(
+            medicalRecordId: appointment.medicalRecordId!,
+            petId: appointment.petId,
+            petName: appointment.petName,
+            appointmentId: appointment.appointmentId,
+            date: DateTime.parse(appointment.date),
+            notes: null,
+            analysisProvided: null,
+            diagnoses: [],
+            treatments: [],
+            labResults: [],
+            vaccinations: [],
+          );
+        } else {
+          medicalRecords[appointment.appointmentId] = null;
+        }
+      }
+
       setState(() {
         _appointments = fetchedAppointments;
+        _medicalRecords = medicalRecords;
         _isLoadingAppointments = false;
       });
     } catch (e) {
@@ -342,6 +373,12 @@ class _ViewPatientScreenState extends State<ViewPatientPage> {
               style: TextStyle(fontWeight: FontWeight.bold),
             ),
           ),
+          DataColumn(
+            label: Text(
+              "Actions",
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ),
         ],
         rows: appointmentsToShow.map((appointment) {
           return DataRow(
@@ -351,10 +388,11 @@ class _ViewPatientScreenState extends State<ViewPatientPage> {
               DataCell(
                 Text(
                   appointment.serviceNames.isNotEmpty
-                      ? appointment.serviceNames
+                      ? appointment.serviceNamesString
                       : "N/A",
                 ),
               ),
+              DataCell(_buildMedicalRecordButton(appointment)),
             ],
           );
         }).toList(),
@@ -369,5 +407,86 @@ class _ViewPatientScreenState extends State<ViewPatientPage> {
     } catch (_) {
       return dateStr;
     }
+  }
+
+  Widget _buildMedicalRecordButton(Appointment appointment) {
+    final existingRecord = _medicalRecords[appointment.appointmentId];
+
+    if (existingRecord != null) {
+      // Show Edit button for existing records
+      return ElevatedButton.icon(
+        onPressed: () =>
+            _showEditMedicalRecordModal(appointment, existingRecord),
+        icon: const Icon(Icons.edit, size: 16),
+        label: const Text("Edit", style: TextStyle(fontSize: 12)),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: const Color(0xFF5AB7E2),
+          foregroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      );
+    } else {
+      // Show Add Note button for appointments without records
+      return ElevatedButton.icon(
+        onPressed: () => _showAddMedicalRecordModal(appointment),
+        icon: const Icon(Icons.note_add, size: 16),
+        label: const Text("Add Note", style: TextStyle(fontSize: 12)),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: const Color(0xFF5AB7E2),
+          foregroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      );
+    }
+  }
+
+  void _showAddMedicalRecordModal(Appointment appointment) {
+    showDialog(
+      context: context,
+      builder: (context) => AddMedicalRecordModal(
+        patient: widget.patient,
+        appointment: appointment,
+      ),
+    ).then((result) {
+      if (result == true) {
+        _loadAppointments(); // Refresh to show the new record
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Medical record added successfully!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    });
+  }
+
+  void _showEditMedicalRecordModal(
+    Appointment appointment,
+    MedicalRecord record,
+  ) {
+    showDialog(
+      context: context,
+      builder: (context) => AddMedicalRecordModal(
+        patient: widget.patient,
+        appointment: appointment,
+        existingRecord: record,
+      ),
+    ).then((result) {
+      if (result == true) {
+        _loadAppointments(); // Refresh to show updated record
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Medical record updated successfully!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    });
   }
 }

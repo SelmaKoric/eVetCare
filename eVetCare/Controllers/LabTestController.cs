@@ -8,11 +8,10 @@ namespace eVetCare.API.Controllers
 {
     [ApiController]
     [Route("[controller]")]
-    public class MedicalRecordController : BaseController<MedicalRecord, MedicalRecordSearchObject>
+    public class LabTestController : BaseCRUDController<LabTestModel, LabTestSearchObject, LabTestUpsertRequest, LabTestUpsertRequest>
     {
-        public MedicalRecordController(IMedicalRecordService service) : base(service)
+        public LabTestController(ILabTest service) : base(service)
         {
         }
     }
 }
-

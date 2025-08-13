@@ -10,7 +10,7 @@ part 'medical_record.g.dart';
 class MedicalRecord {
   final int medicalRecordId;
   final int petId;
-  final String petName;
+  final String? petName; // Made nullable
   final int appointmentId;
   final DateTime date;
   final String? notes;
@@ -23,7 +23,7 @@ class MedicalRecord {
   MedicalRecord({
     required this.medicalRecordId,
     required this.petId,
-    required this.petName,
+    this.petName, // Made optional
     required this.appointmentId,
     required this.date,
     this.notes,
@@ -37,7 +37,7 @@ class MedicalRecord {
   factory MedicalRecord.fromJson(Map<String, dynamic> json) => MedicalRecord(
     medicalRecordId: json['medicalRecordId'] as int,
     petId: json['petId'] as int,
-    petName: json['petName'] as String,
+    petName: json['petName'] as String?, // Made nullable
     appointmentId: json['appointmentId'] as int,
     date: DateTime.parse(json['date'] as String),
     notes: json['notes'] as String?,

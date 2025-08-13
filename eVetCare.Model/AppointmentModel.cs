@@ -8,6 +8,7 @@ namespace eVetCare.Model
         public int AppointmentId { get; set; }
 
         public int PetId { get; set; }
+        public int MedicalRecordId { get; set; }
 
         public string PetName { get; set; } = null!;
 
@@ -23,7 +24,6 @@ namespace eVetCare.Model
 
         public TimeSpan? Duration { get; set; }
 
-        public bool IsActive { get; set; }
 
     }
 }

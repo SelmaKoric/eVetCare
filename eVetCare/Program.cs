@@ -97,6 +97,7 @@ builder.Services.AddTransient<IAuthService, AuthService>();
 builder.Services.AddTransient<ISpeciesService, SpeciesService>();
 builder.Services.AddTransient<IGendersService, GenderService>();
 builder.Services.AddTransient<IServiceCategoryService, ServiceCategoryService>();
+builder.Services.AddTransient<ILabTest, LabTestService>();
 
 
 builder.Services.AddScoped<IAnalyticsService, AnalyticsService>();

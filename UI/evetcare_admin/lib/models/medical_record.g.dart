@@ -10,7 +10,7 @@ MedicalRecord _$MedicalRecordFromJson(Map<String, dynamic> json) =>
     MedicalRecord(
       medicalRecordId: (json['medicalRecordId'] as num).toInt(),
       petId: (json['petId'] as num).toInt(),
-      petName: json['petName'] as String,
+      petName: json['petName'] as String?,
       appointmentId: (json['appointmentId'] as num).toInt(),
       date: DateTime.parse(json['date'] as String),
       notes: json['notes'] as String?,
