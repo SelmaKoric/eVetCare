@@ -10,7 +10,7 @@ ServiceCategory _$ServiceCategoryFromJson(Map<String, dynamic> json) =>
     ServiceCategory(
       categoryId: (json['categoryId'] as num).toInt(),
       name: json['name'] as String,
-      isDeleted: json['isDeleted'] as bool,
+      isDeleted: json['isDeleted'] as bool?,
     );
 
 Map<String, dynamic> _$ServiceCategoryToJson(ServiceCategory instance) =>

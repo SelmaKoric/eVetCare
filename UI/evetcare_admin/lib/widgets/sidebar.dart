@@ -4,12 +4,14 @@ class Sidebar extends StatefulWidget {
   final int selectedIndex;
   final List<String> tabs;
   final ValueChanged<int> onTabSelected;
+  final ValueChanged<bool>? onExpandedChanged;
 
   const Sidebar({
     super.key,
     required this.selectedIndex,
     required this.onTabSelected,
     required this.tabs,
+    this.onExpandedChanged,
   });
 
   @override
@@ -47,6 +49,8 @@ class _SidebarState extends State<Sidebar> {
                     setState(() {
                       isExpanded = !isExpanded;
                     });
+                    // Notify parent of state change
+                    widget.onExpandedChanged?.call(isExpanded);
                   },
                 ),
               ],
@@ -64,13 +68,15 @@ class _SidebarState extends State<Sidebar> {
                 return ListTile(
                   selected: isSelected,
                   selectedTileColor: Colors.blue.shade50,
-                  leading: SizedBox(
-                    width: 32,
-                    child: Icon(
-                      Icons.chevron_right,
-                      color: isSelected ? Colors.blue : Colors.grey[700],
-                    ),
-                  ),
+                  leading: isExpanded
+                      ? SizedBox(
+                          width: 32,
+                          child: Icon(
+                            Icons.chevron_right,
+                            color: isSelected ? Colors.blue : Colors.grey[700],
+                          ),
+                        )
+                      : const SizedBox(width: 32),
                   title: isExpanded
                       ? Text(
                           widget.tabs[index],

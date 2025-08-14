@@ -15,6 +15,7 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   int selectedIndex = 0;
+  bool isSidebarExpanded = true;
 
   final List<Widget> tabs = [
     PatientsPage(),
@@ -37,17 +38,19 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
       body: Row(
         children: [
-          SizedBox(
-            width: 200,
-            child: Sidebar(
-              selectedIndex: selectedIndex,
-              onTabSelected: (index) {
-                setState(() {
-                  selectedIndex = index;
-                });
-              },
-              tabs: tabTitles,
-            ),
+          Sidebar(
+            selectedIndex: selectedIndex,
+            onTabSelected: (index) {
+              setState(() {
+                selectedIndex = index;
+              });
+            },
+            onExpandedChanged: (expanded) {
+              setState(() {
+                isSidebarExpanded = expanded;
+              });
+            },
+            tabs: tabTitles,
           ),
           Expanded(child: tabs[selectedIndex]),
         ],

@@ -6,12 +6,12 @@ part 'service_category.g.dart';
 class ServiceCategory {
   final int categoryId;
   final String name;
-  final bool isDeleted;
+  final bool? isDeleted;
 
   ServiceCategory({
     required this.categoryId,
     required this.name,
-    required this.isDeleted,
+    this.isDeleted,
   });
 
   factory ServiceCategory.fromJson(Map<String, dynamic> json) =>

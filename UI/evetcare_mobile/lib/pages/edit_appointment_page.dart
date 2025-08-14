@@ -616,12 +616,30 @@ class _EditAppointmentPageState extends State<EditAppointmentPage> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to update appointment: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        final errorInfo = AppointmentService.handleAppointmentError(e);
+        final errorMessage = errorInfo['message'] as String;
+        final isOverlapError = errorInfo['isOverlapError'] as bool;
+
+        if (isOverlapError) {
+          // Show a dialog for overlap errors to make it more prominent
+          _showOverlapErrorDialog(errorMessage);
+        } else {
+          // Show snackbar for other errors
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(errorMessage),
+              backgroundColor: Colors.red,
+              duration: const Duration(seconds: 5),
+              action: SnackBarAction(
+                label: 'OK',
+                textColor: Colors.white,
+                onPressed: () {
+                  ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                },
+              ),
+            ),
+          );
+        }
       }
     } finally {
       if (mounted) {
@@ -630,5 +648,79 @@ class _EditAppointmentPageState extends State<EditAppointmentPage> {
         });
       }
     }
+  }
+
+  void _showOverlapErrorDialog(String message) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Row(
+            children: [
+              Icon(Icons.schedule, color: Colors.orange, size: 28),
+              const SizedBox(width: 8),
+              const Text('Time Slot Unavailable'),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                message,
+                style: TextStyle(fontSize: 16, color: Colors.grey[800]),
+              ),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.orange[50],
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.orange[200]!),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.info_outline,
+                      color: Colors.orange[700],
+                      size: 20,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Please select a different date or time for your appointment.',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.orange[700],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.orange,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: const Text(
+                'OK',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+              ),
+            ),
+          ],
+        );
+      },
+    );
   }
 }

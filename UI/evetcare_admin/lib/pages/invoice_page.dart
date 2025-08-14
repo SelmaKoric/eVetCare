@@ -45,6 +45,7 @@ class _InvoicePageState extends State<InvoicePage> {
   }
 
   Future<void> _fetchServiceNamesForInvoices(List<Invoice> invoices) async {
+    if (!mounted) return;
     setState(() {
       _loadingServices = true;
     });
@@ -53,6 +54,7 @@ class _InvoicePageState extends State<InvoicePage> {
         .toSet();
     final Map<int, String> names = {};
     for (final id in serviceIds) {
+      if (!mounted) return; // Check if still mounted before each iteration
       try {
         final headers = {
           'Content-Type': 'application/json',
@@ -79,18 +81,22 @@ class _InvoicePageState extends State<InvoicePage> {
         names[id] = 'Unknown';
       }
     }
-    setState(() {
-      _serviceNames = names;
-      _loadingServices = false;
-    });
+    if (mounted) {
+      setState(() {
+        _serviceNames = names;
+        _loadingServices = false;
+      });
+    }
   }
 
   Future<void> _fetchPaymentsForInvoices(List<Invoice> invoices) async {
+    if (!mounted) return;
     setState(() {
       _loadingPayments = true;
     });
     final Map<int, List<Payment>> paymentsMap = {};
     for (final invoice in invoices) {
+      if (!mounted) return; // Check if still mounted before each iteration
       try {
         final headers = {
           'Content-Type': 'application/json',
@@ -145,10 +151,12 @@ class _InvoicePageState extends State<InvoicePage> {
       }
     }
     print('Final payments map: $_payments');
-    setState(() {
-      _payments = paymentsMap;
-      _loadingPayments = false;
-    });
+    if (mounted) {
+      setState(() {
+        _payments = paymentsMap;
+        _loadingPayments = false;
+      });
+    }
   }
 
   void _showAddInvoiceModal() {
@@ -957,6 +965,7 @@ class _InvoiceDetailsModalState extends State<_InvoiceDetailsModal> {
   Future<void> _fetchServiceNames() async {
     final Map<int, String> names = {};
     for (final item in widget.invoice.invoiceItems) {
+      if (!mounted) return; // Check if still mounted before each iteration
       try {
         final headers = {
           'Content-Type': 'application/json',

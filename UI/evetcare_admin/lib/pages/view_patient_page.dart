@@ -351,7 +351,12 @@ class _ViewPatientScreenState extends State<ViewPatientPage> {
       );
     }
 
-    final appointmentsToShow = _appointments.take(3).toList();
+    // Sort appointments by date (newest first) and take the first 3
+    final sortedAppointments = List<Appointment>.from(_appointments);
+    sortedAppointments.sort(
+      (a, b) => DateTime.parse(b.date).compareTo(DateTime.parse(a.date)),
+    );
+    final appointmentsToShow = sortedAppointments.take(3).toList();
 
     return SizedBox(
       width: double.infinity,

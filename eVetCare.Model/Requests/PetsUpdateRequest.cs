@@ -9,7 +9,6 @@ namespace eVetCare.Model.Requests
         public double? Weight { get; set; }
 
         public IFormFile? Photo { get; set; }
-        public bool? IsDeleted { get; set; }
     }
 }
 

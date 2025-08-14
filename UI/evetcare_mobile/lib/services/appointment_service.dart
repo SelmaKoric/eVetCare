@@ -330,4 +330,25 @@ class AppointmentService {
       'pending': pending,
     };
   }
+
+  // Handle appointment error messages
+  static Map<String, dynamic> handleAppointmentError(dynamic error) {
+    String errorMessage = 'An error occurred';
+    bool isOverlapError = false;
+
+    // Check if the error message contains overlap-related text
+    if (error.toString().contains('overlaps with the requested time')) {
+      errorMessage =
+          'Time slot unavailable. There is already an appointment scheduled that overlaps with the requested time. Please select a different date or time.';
+      isOverlapError = true;
+    } else if (error.toString().contains('overlap')) {
+      errorMessage =
+          'This time slot conflicts with an existing appointment. Please choose a different time.';
+      isOverlapError = true;
+    } else {
+      errorMessage = error.toString();
+    }
+
+    return {'message': errorMessage, 'isOverlapError': isOverlapError};
+  }
 }

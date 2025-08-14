@@ -44,11 +44,16 @@ class _ServicesPageState extends State<ServicesPage> {
     });
     try {
       final cats = await _serviceProvider.getServiceCategories();
+      print('ServicesPage - Categories fetched: ${cats.length}');
+      print(
+        'ServicesPage - Categories: ${cats.map((c) => '${c.categoryId}: ${c.name}').join(', ')}',
+      );
       setState(() {
         _categories = cats;
         _loadingCategories = false;
       });
     } catch (e) {
+      print('ServicesPage - Error fetching categories: $e');
       setState(() {
         _categories = [];
         _loadingCategories = false;
@@ -62,9 +67,6 @@ class _ServicesPageState extends State<ServicesPage> {
       if (_searchQuery.isNotEmpty) {
         filter['Name'] = _searchQuery;
       }
-      if (_selectedCategory != null) {
-        filter['CategoryName'] = _selectedCategory!.name;
-      }
       // Always filter for active services
       filter['IsActive'] = true;
       _futureServices = _serviceProvider.get(filter: filter);
@@ -77,14 +79,6 @@ class _ServicesPageState extends State<ServicesPage> {
     _fetchServices();
   }
 
-  void _onCategoryChanged(ServiceCategory? cat) {
-    setState(() {
-      _selectedCategory = cat;
-      _page = 1;
-    });
-    _fetchServices();
-  }
-
   void _onPageChanged(int newPage) {
     _page = newPage;
     _fetchServices();
@@ -94,7 +88,6 @@ class _ServicesPageState extends State<ServicesPage> {
     setState(() {
       _searchController.clear();
       _searchQuery = '';
-      _selectedCategory = null;
       _page = 1;
     });
     _fetchServices();
@@ -129,40 +122,6 @@ class _ServicesPageState extends State<ServicesPage> {
                 style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
               ),
               const Spacer(),
-              SizedBox(
-                width: 180,
-                child: _loadingCategories
-                    ? Row(
-                        children: [
-                          const Expanded(child: Text('All Categories')),
-                          const SizedBox(width: 8),
-                          const SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          ),
-                        ],
-                      )
-                    : DropdownButton<ServiceCategory?>(
-                        isExpanded: true,
-                        value: _selectedCategory,
-                        hint: const Text('All Categories'),
-                        items: [
-                          const DropdownMenuItem<ServiceCategory?>(
-                            value: null,
-                            child: Text('All Categories'),
-                          ),
-                          ..._categories.map(
-                            (cat) => DropdownMenuItem<ServiceCategory?>(
-                              value: cat,
-                              child: Text(cat.name),
-                            ),
-                          ),
-                        ],
-                        onChanged: _onCategoryChanged,
-                      ),
-              ),
-              const SizedBox(width: 12),
               SizedBox(
                 width: 250,
                 child: TextField(
@@ -334,111 +293,49 @@ class _ServicesPageState extends State<ServicesPage> {
                       ),
                       DataCell(
                         Text(
-                          service.durationMinutes == null ||
-                                  service.durationMinutes == 0
+                          service.durationMinutes == null
                               ? '—'
-                              : service.durationMinutes! % 60 == 0
-                              ? '${(service.durationMinutes! / 60).round()}h'
+                              : service.durationMinutes! == 0
+                              ? '0m'
+                              : service.durationMinutes! >= 60
+                              ? '${(service.durationMinutes! / 60).round()}h ${service.durationMinutes! % 60 > 0 ? '${service.durationMinutes! % 60}m' : ''}'
                               : '${service.durationMinutes}m',
                         ),
                       ),
                       DataCell(
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            ElevatedButton(
-                              onPressed: () async {
-                                final result = await showDialog<bool>(
-                                  context: context,
-                                  builder: (context) => EditServiceDialog(
-                                    service: service,
-                                    categories: _categories,
-                                  ),
-                                );
-                                if (result == true) {
-                                  _fetchServices();
-                                }
-                              },
-                              style: ElevatedButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 8,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(20),
-                                ),
-                                backgroundColor: const Color(0xFF5AB7E2),
-                                foregroundColor: Colors.white,
-                              ),
-                              child: const Text("Edit"),
+                        ElevatedButton(
+                          onPressed: () async {
+                            // Ensure categories are loaded before opening dialog
+                            if (_categories.isEmpty) {
+                              await _fetchCategories();
+                            }
+
+                            print('Categories loaded: ${_categories.length}');
+                            print(
+                              'Categories: ${_categories.map((c) => '${c.categoryId}: ${c.name}').join(', ')}',
+                            );
+
+                            final result = await showDialog<bool>(
+                              context: context,
+                              builder: (context) =>
+                                  EditServiceDialog(service: service),
+                            );
+                            if (result == true) {
+                              _fetchServices();
+                            }
+                          },
+                          style: ElevatedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 8,
                             ),
-                            const SizedBox(width: 8),
-                            ElevatedButton(
-                              onPressed: () async {
-                                final confirm = await showDialog<bool>(
-                                  context: context,
-                                  builder: (context) => AlertDialog(
-                                    title: const Text('Confirm Delete'),
-                                    content: const Text(
-                                      'Are you sure you want to delete this service?',
-                                    ),
-                                    actions: [
-                                      TextButton(
-                                        onPressed: () =>
-                                            Navigator.of(context).pop(false),
-                                        child: const Text('Cancel'),
-                                      ),
-                                      TextButton(
-                                        onPressed: () =>
-                                            Navigator.of(context).pop(true),
-                                        child: const Text(
-                                          'Delete',
-                                          style: TextStyle(color: Colors.red),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                );
-                                if (confirm == true) {
-                                  final token = Authorization.token;
-                                  await http.put(
-                                    Uri.parse(
-                                      'http://localhost:5081/Services/${service.serviceId}',
-                                    ),
-                                    headers: {
-                                      'Content-Type': 'application/json',
-                                      'Authorization': 'Bearer $token',
-                                      'accept': 'text/plain',
-                                    },
-                                    body: jsonEncode({
-                                      'serviceId': service.serviceId,
-                                      'name': service.name,
-                                      'description': service.description,
-                                      'categoryId': service.categoryId,
-                                      'categoryName': service.categoryName,
-                                      'price': service.price ?? 0.0,
-                                      'durationMinutes':
-                                          service.durationMinutes ?? 0,
-                                      'isActive': false,
-                                    }),
-                                  );
-                                  _fetchServices();
-                                }
-                              },
-                              style: ElevatedButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 8,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(20),
-                                ),
-                                backgroundColor: Colors.red.shade400,
-                                foregroundColor: Colors.white,
-                              ),
-                              child: const Text("Delete"),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(20),
                             ),
-                          ],
+                            backgroundColor: const Color(0xFF5AB7E2),
+                            foregroundColor: Colors.white,
+                          ),
+                          child: const Text("Edit"),
                         ),
                       ),
                     ],
@@ -777,12 +674,7 @@ class _AddServiceDialogState extends State<AddServiceDialog> {
 
 class EditServiceDialog extends StatefulWidget {
   final Service service;
-  final List<ServiceCategory> categories;
-  const EditServiceDialog({
-    super.key,
-    required this.service,
-    required this.categories,
-  });
+  const EditServiceDialog({super.key, required this.service});
 
   @override
   State<EditServiceDialog> createState() => _EditServiceDialogState();
@@ -800,7 +692,9 @@ class _EditServiceDialogState extends State<EditServiceDialog> {
   final _priceFocus = FocusNode();
   final _durationFocus = FocusNode();
 
+  List<ServiceCategory> _categories = [];
   ServiceCategory? _selectedCategory;
+  bool _loadingCategories = true;
 
   @override
   void initState() {
@@ -815,10 +709,51 @@ class _EditServiceDialogState extends State<EditServiceDialog> {
     _durationController = TextEditingController(
       text: widget.service.durationMinutes?.toString() ?? '',
     );
-    _selectedCategory = widget.categories.firstWhere(
-      (cat) => cat.categoryId == widget.service.categoryId,
-      orElse: () => widget.categories.first,
-    );
+
+    _fetchCategories();
+  }
+
+  Future<void> _fetchCategories() async {
+    try {
+      final provider = ServiceProvider();
+      final cats = await provider.getServiceCategories();
+      print('EditServiceDialog - Categories fetched: ${cats.length}');
+      print(
+        'EditServiceDialog - Categories: ${cats.map((c) => '${c.categoryId}: ${c.name}').join(', ')}',
+      );
+
+      setState(() {
+        _categories = cats;
+        _loadingCategories = false;
+      });
+
+      // Find the matching category for this service
+      if (_categories.isNotEmpty) {
+        try {
+          _selectedCategory = _categories.firstWhere(
+            (cat) => cat.categoryId == widget.service.categoryId,
+            orElse: () => _categories.first,
+          );
+          print(
+            'EditServiceDialog - Selected category: ${_selectedCategory?.name}',
+          );
+        } catch (e) {
+          _selectedCategory = _categories.first;
+          print(
+            'EditServiceDialog - Using first category as fallback: ${_selectedCategory?.name}',
+          );
+        }
+        setState(() {}); // Trigger rebuild to show selected category
+      } else {
+        _selectedCategory = null;
+        print('EditServiceDialog - No categories available');
+      }
+    } catch (e) {
+      print('EditServiceDialog - Error fetching categories: $e');
+      setState(() {
+        _loadingCategories = false;
+      });
+    }
   }
 
   @override
@@ -848,13 +783,11 @@ class _EditServiceDialogState extends State<EditServiceDialog> {
           'accept': 'text/plain',
         },
         body: jsonEncode({
-          'serviceId': widget.service.serviceId,
           'name': _nameController.text.trim(),
           'description': _descriptionController.text.trim(),
           'categoryId': _selectedCategory!.categoryId,
           'price': double.tryParse(_priceController.text) ?? 0.0,
           'durationMinutes': int.tryParse(_durationController.text) ?? 0,
-          'isDeleted': false,
         }),
       );
       if (response.statusCode >= 200 && response.statusCode < 300) {
@@ -879,94 +812,93 @@ class _EditServiceDialogState extends State<EditServiceDialog> {
   Widget build(BuildContext context) {
     return AlertDialog(
       title: const Text('Edit Service'),
-      content: widget.categories.isEmpty
-          ? const SizedBox(
-              height: 100,
-              child: Center(child: CircularProgressIndicator()),
-            )
-          : Form(
-              key: _formKey,
-              child: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    TextFormField(
-                      controller: _nameController,
-                      decoration: const InputDecoration(labelText: 'Name'),
-                      validator: (v) =>
-                          v == null || v.isEmpty ? 'Required' : null,
-                    ),
-                    TextFormField(
-                      controller: _descriptionController,
-                      decoration: const InputDecoration(
-                        labelText: 'Description',
-                      ),
-                      validator: (v) =>
-                          v == null || v.isEmpty ? 'Required' : null,
-                    ),
-                    DropdownButtonFormField<ServiceCategory>(
+      content: Form(
+        key: _formKey,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextFormField(
+                controller: _nameController,
+                decoration: const InputDecoration(labelText: 'Name'),
+                validator: (v) => v == null || v.isEmpty ? 'Required' : null,
+              ),
+              TextFormField(
+                controller: _descriptionController,
+                decoration: const InputDecoration(labelText: 'Description'),
+                validator: (v) => v == null || v.isEmpty ? 'Required' : null,
+              ),
+              _loadingCategories
+                  ? const CircularProgressIndicator()
+                  : DropdownButtonFormField<ServiceCategory>(
                       value: _selectedCategory,
-                      items: widget.categories
-                          .map(
-                            (cat) => DropdownMenuItem(
-                              value: cat,
-                              child: Text(cat.name),
-                            ),
-                          )
-                          .toList(),
-                      onChanged: (cat) =>
-                          setState(() => _selectedCategory = cat),
+                      items: _categories.isEmpty
+                          ? [
+                              DropdownMenuItem(
+                                value: null,
+                                child: Text('No categories available'),
+                              ),
+                            ]
+                          : _categories
+                                .map(
+                                  (cat) => DropdownMenuItem(
+                                    value: cat,
+                                    child: Text(cat.name),
+                                  ),
+                                )
+                                .toList(),
+                      onChanged: _categories.isEmpty
+                          ? null
+                          : (cat) => setState(() => _selectedCategory = cat),
                       decoration: const InputDecoration(labelText: 'Category'),
                       validator: (v) => v == null ? 'Required' : null,
                     ),
-                    TextFormField(
-                      controller: _priceController,
-                      decoration: const InputDecoration(labelText: 'Price'),
-                      keyboardType: TextInputType.numberWithOptions(
-                        decimal: true,
-                      ),
-                      focusNode: _priceFocus,
-                      validator: (v) {
-                        if (v == null || v.trim().isEmpty) return 'Required';
-                        final value = double.tryParse(v);
-                        if (value == null) return 'Enter a valid number';
-                        if (value < 0) return 'Must be positive';
-                        return null;
-                      },
-                      inputFormatters: [
-                        FilteringTextInputFormatter.allow(
-                          RegExp(r'^[0-9]*\.?[0-9]*'),
-                        ),
-                      ],
-                    ),
-                    TextFormField(
-                      controller: _durationController,
-                      decoration: const InputDecoration(
-                        labelText: 'Duration (minutes)',
-                      ),
-                      keyboardType: TextInputType.number,
-                      focusNode: _durationFocus,
-                      validator: (v) {
-                        if (v == null || v.trim().isEmpty) return 'Required';
-                        final value = int.tryParse(v);
-                        if (value == null) return 'Enter a valid integer';
-                        if (value < 0) return 'Must be positive';
-                        return null;
-                      },
-                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                    ),
-                    if (_error != null)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 8.0),
-                        child: Text(
-                          _error!,
-                          style: const TextStyle(color: Colors.red),
-                        ),
-                      ),
-                  ],
-                ),
+              TextFormField(
+                controller: _priceController,
+                decoration: const InputDecoration(labelText: 'Price'),
+                keyboardType: TextInputType.numberWithOptions(decimal: true),
+                focusNode: _priceFocus,
+                validator: (v) {
+                  if (v == null || v.trim().isEmpty) return 'Required';
+                  final value = double.tryParse(v);
+                  if (value == null) return 'Enter a valid number';
+                  if (value < 0) return 'Must be positive';
+                  return null;
+                },
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(
+                    RegExp(r'^[0-9]*\.?[0-9]*'),
+                  ),
+                ],
               ),
-            ),
+              TextFormField(
+                controller: _durationController,
+                decoration: const InputDecoration(
+                  labelText: 'Duration (minutes)',
+                ),
+                keyboardType: TextInputType.number,
+                focusNode: _durationFocus,
+                validator: (v) {
+                  if (v == null || v.trim().isEmpty) return 'Required';
+                  final value = int.tryParse(v);
+                  if (value == null) return 'Enter a valid integer';
+                  if (value < 0) return 'Must be positive';
+                  return null;
+                },
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              ),
+              if (_error != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8.0),
+                  child: Text(
+                    _error!,
+                    style: const TextStyle(color: Colors.red),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
       actions: [
         TextButton(
           onPressed: _loading ? null : () => Navigator.of(context).pop(false),

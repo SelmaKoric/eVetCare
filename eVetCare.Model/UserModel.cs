@@ -17,8 +17,6 @@ namespace eVetCare.Model
 
         public string PhoneNumber { get; set; }
 
-        public bool IsActive { get; set; }
-
         public bool IsAppUser { get; set; }
 
         public virtual List<Pets> Pets { get; set; }
