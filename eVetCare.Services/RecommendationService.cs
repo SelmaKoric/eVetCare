@@ -86,4 +86,25 @@ public class RecommendationService : IRecommendationService
 
         _context.SaveChanges();
     }
+
+    public RecommendationModel? GetRecommendationsForPet(int petId)
+    {
+        var rec = _context.Recommendations
+                    .Where(r => r.PetId == petId)
+                    .OrderByDescending(r => r.CreatedAt)
+                    .FirstOrDefault()
+                    ?? _context.Recommendations
+                        .Where(r => r.PetId == petId)
+                        .OrderByDescending(r => r.CreatedAt)
+                        .FirstOrDefault();
+
+        if (rec == null)
+            return null;
+
+        return new RecommendationModel
+        {
+            Content = rec.Content,
+            CreatedAt = rec.CreatedAt
+        };
+    }
 }

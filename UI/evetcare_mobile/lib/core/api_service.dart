@@ -208,18 +208,15 @@ class ApiService {
 
   static Future<bool> _addPetWithoutImage(Pet pet) async {
     try {
-      // Create multipart request
       final request = http.MultipartRequest(
         'POST',
         Uri.parse(patientsEndpoint),
       );
 
-      // Add authorization header
       if (Authorization.token != null) {
         request.headers["Authorization"] = "Bearer ${Authorization.token}";
       }
 
-      // Add text fields
       request.fields['ownerId'] = pet.ownerId.toString();
       request.fields['ownerFirstName'] = pet.ownerFirstName;
       request.fields['ownerLastName'] = pet.ownerLastName;
@@ -232,10 +229,8 @@ class ApiService {
       request.fields['age'] = pet.age.toString();
       request.fields['weight'] = pet.weight.toString();
 
-      // Add empty photo field - server might expect this
       request.fields['photo'] = '';
 
-      // Also try alternative field names that might be expected
       request.fields['OwnerId'] = pet.ownerId.toString();
       request.fields['Name'] = pet.name;
       request.fields['SpeciesId'] = pet.speciesId.toString();
@@ -245,7 +240,6 @@ class ApiService {
       request.fields['Weight'] = pet.weight.toString();
       request.fields['Photo'] = '';
 
-      // Enhanced debug logging
       print('=== ADD PET WITHOUT IMAGE REQUEST DEBUG ===');
       print('URL: $patientsEndpoint');
       print('Method: POST');
@@ -268,7 +262,6 @@ class ApiService {
       final streamedResponse = await request.send();
       final response = await http.Response.fromStream(streamedResponse);
 
-      // Enhanced response logging
       print('=== ADD PET WITHOUT IMAGE RESPONSE DEBUG ===');
       print('Status Code: ${response.statusCode}');
       print('Response Headers:');
@@ -310,7 +303,6 @@ class ApiService {
 
     final body = jsonEncode(pet.toJson());
 
-    // Enhanced debug logging
     print('=== ADD PET JSON REQUEST DEBUG ===');
     print('URL: $patientsEndpoint');
     print('Method: POST');
@@ -339,7 +331,6 @@ class ApiService {
       body: body,
     );
 
-    // Enhanced response logging
     print('=== ADD PET JSON RESPONSE DEBUG ===');
     print('Status Code: ${response.statusCode}');
     print('Response Headers:');
@@ -370,7 +361,6 @@ class ApiService {
     print('============================');
 
     if (imageFile != null) {
-      // Use multipart form data for file upload
       print('Using _updatePetWithImage method');
       return await _updatePetWithImage(petId, pet, imageFile);
     } else {
@@ -382,18 +372,15 @@ class ApiService {
 
   static Future<bool> _updatePetWithoutImage(int petId, Pet pet) async {
     try {
-      // Create multipart request
       final request = http.MultipartRequest(
         'PUT',
         Uri.parse('$patientsEndpoint/$petId'),
       );
 
-      // Add authorization header
       if (Authorization.token != null) {
         request.headers["Authorization"] = "Bearer ${Authorization.token}";
       }
 
-      // Add text fields
       request.fields['ownerId'] = pet.ownerId.toString();
       request.fields['ownerFirstName'] = pet.ownerFirstName;
       request.fields['ownerLastName'] = pet.ownerLastName;
@@ -406,10 +393,8 @@ class ApiService {
       request.fields['age'] = pet.age.toString();
       request.fields['weight'] = pet.weight.toString();
 
-      // Add empty photo field - server might expect this
       request.fields['photo'] = '';
 
-      // Also try alternative field names that might be expected
       request.fields['OwnerId'] = pet.ownerId.toString();
       request.fields['Name'] = pet.name;
       request.fields['SpeciesId'] = pet.speciesId.toString();
@@ -419,7 +404,6 @@ class ApiService {
       request.fields['Weight'] = pet.weight.toString();
       request.fields['Photo'] = '';
 
-      // Enhanced debug logging
       print('=== UPDATE PET WITHOUT IMAGE REQUEST DEBUG ===');
       print('URL: $patientsEndpoint/$petId');
       print('Method: PUT');
@@ -442,7 +426,6 @@ class ApiService {
       final streamedResponse = await request.send();
       final response = await http.Response.fromStream(streamedResponse);
 
-      // Enhanced response logging
       print('=== UPDATE PET WITHOUT IMAGE RESPONSE DEBUG ===');
       print('Status Code: ${response.statusCode}');
       print('Response Headers:');
@@ -478,18 +461,15 @@ class ApiService {
     File imageFile,
   ) async {
     try {
-      // Create multipart request
       final request = http.MultipartRequest(
         'PUT',
         Uri.parse('$patientsEndpoint/$petId'),
       );
 
-      // Add authorization header
       if (Authorization.token != null) {
         request.headers["Authorization"] = "Bearer ${Authorization.token}";
       }
 
-      // Add text fields
       request.fields['ownerId'] = pet.ownerId.toString();
       request.fields['ownerFirstName'] = pet.ownerFirstName;
       request.fields['ownerLastName'] = pet.ownerLastName;
@@ -502,7 +482,6 @@ class ApiService {
       request.fields['age'] = pet.age.toString();
       request.fields['weight'] = pet.weight.toString();
 
-      // Add image file
       final stream = http.ByteStream(imageFile.openRead());
       final length = await imageFile.length();
       final multipartFile = http.MultipartFile(
@@ -513,7 +492,6 @@ class ApiService {
       );
       request.files.add(multipartFile);
 
-      // Debug logging
       print('=== UPDATE PET WITH IMAGE REQUEST DEBUG ===');
       print('URL: $patientsEndpoint/$petId');
       print('Headers: ${request.headers}');

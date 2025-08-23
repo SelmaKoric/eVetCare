@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-
-namespace eVetCare.Services.Database;
+﻿namespace eVetCare.Services.Database;
 
 public partial class Payment
 {
@@ -16,6 +13,20 @@ public partial class Payment
     public DateTime PaymentDate { get; set; }
 
     public bool IsActive { get; set; }
+
+    public string? PaymentIntentId { get; set; }
+
+    public string? PaymentMethodId { get; set; }
+
+    public string? Status { get; set; }
+
+    public string? CustomerName { get; set; }
+
+    public string? CustomerZip { get; set; }
+
+    public string? Metadata { get; set; }
+
+    public string? Currency { get; set; }
 
     public virtual Invoice Invoice { get; set; } = null!;
 

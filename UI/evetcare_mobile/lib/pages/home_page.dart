@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import '../utils/authorization.dart';
-import 'add_pet_page.dart';
 import 'book_appointment_page.dart';
 import 'notifications_page.dart';
 import 'medical_records_page.dart';
 import 'pets_page.dart';
+import 'recommendations_page.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -151,6 +151,23 @@ class HomePage extends StatelessWidget {
                         context,
                         MaterialPageRoute(
                           builder: (context) => const NotificationsPage(),
+                        ),
+                      );
+                    },
+                  ),
+
+                  // Recommendations Card
+                  _buildActionCard(
+                    context,
+                    icon: Icons.psychology,
+                    title: "Recommendations",
+                    subtitle: "AI suggestions",
+                    color: Colors.indigo,
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const RecommendationsPage(),
                         ),
                       );
                     },

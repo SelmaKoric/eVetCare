@@ -26,14 +26,12 @@ class _ReportsPageState extends State<ReportsPage> {
   DateTime _endDate = DateTime.now();
   bool _isLoading = false;
 
-  // Revenue data
   double _totalRevenue = 0.0;
   Map<String, double> _serviceRevenue = {};
   Map<String, int> _paymentMethods = {};
   List<Invoice> _invoices = [];
-  Map<int, String> _serviceNames = {}; // Cache for service names
+  Map<int, String> _serviceNames = {};
 
-  // Analytics data
   List<DiseaseFrequency> _diseaseFrequency = [];
   List<MostCommonService> _mostCommonServices = [];
 
@@ -49,11 +47,8 @@ class _ReportsPageState extends State<ReportsPage> {
     });
 
     try {
-      // Load service names first
       await _loadServiceNames();
-      // Then load revenue data
       await _loadRevenueData();
-      // Load analytics data
       await _loadAnalyticsData();
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -93,7 +88,6 @@ class _ReportsPageState extends State<ReportsPage> {
 
   Future<void> _loadRevenueData() async {
     try {
-      // Fetch invoices for the date range
       final startDateStr = DateFormat('yyyy-MM-dd').format(_startDate);
       final endDateStr = DateFormat('yyyy-MM-dd').format(_endDate);
 
@@ -117,10 +111,8 @@ class _ReportsPageState extends State<ReportsPage> {
         final data = jsonDecode(response.body);
         final List<dynamic> result = data['result'] ?? [];
 
-        // Parse all invoices first
         final allInvoices = result.map((e) => Invoice.fromJson(e)).toList();
 
-        // Filter by date range on client side as fallback
         _invoices = allInvoices.where((invoice) {
           try {
             final issueDate = DateTime.parse(invoice.issueDate.split('T')[0]);
@@ -154,18 +146,14 @@ class _ReportsPageState extends State<ReportsPage> {
     for (final invoice in _invoices) {
       _totalRevenue += invoice.totalAmount;
 
-      // Calculate service revenue (simplified - using invoice items)
       for (final item in invoice.invoiceItems) {
         final serviceName = _getServiceName(item.serviceId);
-        // Use a portion of the total amount for each service
-        // This is a simplified approach - ideally we'd have individual service prices
         final serviceAmount = invoice.totalAmount / invoice.invoiceItems.length;
         _serviceRevenue[serviceName] =
             (_serviceRevenue[serviceName] ?? 0.0) + serviceAmount;
       }
     }
 
-    // Fetch payment methods data
     await _fetchPaymentMethods();
   }
 
@@ -180,7 +168,6 @@ class _ReportsPageState extends State<ReportsPage> {
 
       print('Fetching payments for date range: $startDateStr to $endDateStr');
 
-      // Fetch payments for the entire date range
       final response = await http.get(
         Uri.parse(
           'http://localhost:5081/Payment?paymentDateFrom=$startDateStr&paymentDateTo=$endDateStr',
@@ -199,12 +186,10 @@ class _ReportsPageState extends State<ReportsPage> {
         final data = jsonDecode(response.body);
         final List<dynamic> result = data['result'] ?? [];
 
-        // Parse all payments first
         final allPayments = result
             .map((e) => Payment.fromJson(e as Map<String, dynamic>))
             .toList();
 
-        // Filter by date range on client side as fallback
         final filteredPayments = allPayments.where((payment) {
           try {
             final paymentDate = DateTime.parse(
@@ -238,9 +223,7 @@ class _ReportsPageState extends State<ReportsPage> {
   Future<void> _loadAnalyticsData() async {
     try {
       print('Loading analytics data...');
-      // Load disease frequency data
       await _loadDiseaseFrequency();
-      // Load most common services data
       await _loadMostCommonServices();
       print('Analytics data loaded successfully');
     } catch (e) {
@@ -287,7 +270,6 @@ class _ReportsPageState extends State<ReportsPage> {
       print('Error loading disease frequency: $e');
     }
 
-    // Add some test data if no data was loaded
     if (_diseaseFrequency.isEmpty) {
       print('Adding test disease frequency data for PDF testing');
       _diseaseFrequency = [
@@ -341,7 +323,6 @@ class _ReportsPageState extends State<ReportsPage> {
       print('Error loading most common services: $e');
     }
 
-    // Add some test data if no data was loaded
     if (_mostCommonServices.isEmpty) {
       print('Adding test most common services data for PDF testing');
       _mostCommonServices = [
@@ -373,7 +354,6 @@ class _ReportsPageState extends State<ReportsPage> {
         _endDate = picked.end;
       });
 
-      // Show loading indicator
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
@@ -383,7 +363,6 @@ class _ReportsPageState extends State<ReportsPage> {
         ),
       );
 
-      // Reload data with new date range
       _loadData();
     }
   }
@@ -420,7 +399,6 @@ class _ReportsPageState extends State<ReportsPage> {
 
   Future<void> _exportToPDF() async {
     try {
-      // Debug logging for analytics data
       print('Exporting PDF with analytics data:');
       print('Disease frequency records: ${_diseaseFrequency.length}');
       print('Most common services records: ${_mostCommonServices.length}');
@@ -433,7 +411,6 @@ class _ReportsPageState extends State<ReportsPage> {
 
       final pdf = pw.Document();
 
-      // Create a simpler, more reliable PDF structure
       pdf.addPage(
         pw.Page(
           pageFormat: PdfPageFormat.a4,
@@ -443,7 +420,6 @@ class _ReportsPageState extends State<ReportsPage> {
               child: pw.Column(
                 crossAxisAlignment: pw.CrossAxisAlignment.start,
                 children: [
-                  // Header
                   pw.Container(
                     width: double.infinity,
                     padding: pw.EdgeInsets.all(20),
@@ -462,7 +438,6 @@ class _ReportsPageState extends State<ReportsPage> {
                   ),
                   pw.SizedBox(height: 20),
 
-                  // Date Range
                   pw.Text(
                     'Period: ${DateFormat('MMM dd, yyyy').format(_startDate)} - ${DateFormat('MMM dd, yyyy').format(_endDate)}',
                     style: pw.TextStyle(
@@ -473,7 +448,6 @@ class _ReportsPageState extends State<ReportsPage> {
                   ),
                   pw.SizedBox(height: 30),
 
-                  // Total Revenue Section
                   pw.Container(
                     width: double.infinity,
                     padding: pw.EdgeInsets.all(15),
@@ -514,7 +488,6 @@ class _ReportsPageState extends State<ReportsPage> {
                   ),
                   pw.SizedBox(height: 20),
 
-                  // Disease Frequency Section
                   pw.Container(
                     width: double.infinity,
                     padding: pw.EdgeInsets.all(15),
@@ -579,7 +552,6 @@ class _ReportsPageState extends State<ReportsPage> {
                   ),
                   pw.SizedBox(height: 20),
 
-                  // Most Common Services Section
                   pw.Container(
                     width: double.infinity,
                     padding: pw.EdgeInsets.all(15),
@@ -643,7 +615,6 @@ class _ReportsPageState extends State<ReportsPage> {
                     ),
                   ),
 
-                  // Footer
                   pw.SizedBox(height: 30),
                   pw.Text(
                     'Report generated on ${DateFormat('MMM dd, yyyy at HH:mm').format(DateTime.now())}',
@@ -660,10 +631,8 @@ class _ReportsPageState extends State<ReportsPage> {
         ),
       );
 
-      // Save the PDF to downloads folder (platform-agnostic)
       final downloadsDir = await getDownloadsDirectory();
       if (downloadsDir == null) {
-        // Fallback to documents directory if downloads is not available
         final documentsDir = await getApplicationDocumentsDirectory();
         final file = File(
           '${documentsDir.path}/eVetCare_Analytics_Report_${DateFormat('yyyyMMdd_HHmm').format(DateTime.now())}.pdf',
@@ -710,7 +679,6 @@ class _ReportsPageState extends State<ReportsPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header
             Row(
               children: [
                 const Text(
@@ -755,7 +723,6 @@ class _ReportsPageState extends State<ReportsPage> {
             ),
             const SizedBox(height: 24),
 
-            // Tab Bar
             Container(
               decoration: BoxDecoration(
                 color: Colors.grey[100],
@@ -802,14 +769,12 @@ class _ReportsPageState extends State<ReportsPage> {
             ),
             const SizedBox(height: 24),
 
-            // Tab Content
             if (_isLoading)
               const Expanded(child: Center(child: CircularProgressIndicator()))
             else
               Expanded(
                 child: TabBarView(
                   children: [
-                    // Revenue Tab
                     SingleChildScrollView(
                       child: Column(
                         children: [
@@ -821,7 +786,6 @@ class _ReportsPageState extends State<ReportsPage> {
                         ],
                       ),
                     ),
-                    // Analytics Tab
                     SingleChildScrollView(
                       child: Column(
                         children: [
@@ -1032,7 +996,6 @@ class _ReportsPageState extends State<ReportsPage> {
                 ),
               )
             else ...[
-              // Pie Chart
               SizedBox(
                 height: 200,
                 child: PieChart(
@@ -1044,7 +1007,6 @@ class _ReportsPageState extends State<ReportsPage> {
                 ),
               ),
               const SizedBox(height: 16),
-              // Payment Methods List
               ..._paymentMethods.entries.map(
                 (entry) => Container(
                   margin: const EdgeInsets.only(bottom: 8),

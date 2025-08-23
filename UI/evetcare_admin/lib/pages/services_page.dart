@@ -25,7 +25,6 @@ class _ServicesPageState extends State<ServicesPage> {
 
   final TextEditingController _searchController = TextEditingController();
 
-  // Category filter state
   List<ServiceCategory> _categories = [];
   ServiceCategory? _selectedCategory;
   bool _loadingCategories = true;
@@ -67,7 +66,6 @@ class _ServicesPageState extends State<ServicesPage> {
       if (_searchQuery.isNotEmpty) {
         filter['Name'] = _searchQuery;
       }
-      // Always filter for active services
       filter['IsActive'] = true;
       _futureServices = _serviceProvider.get(filter: filter);
     });
@@ -305,7 +303,6 @@ class _ServicesPageState extends State<ServicesPage> {
                       DataCell(
                         ElevatedButton(
                           onPressed: () async {
-                            // Ensure categories are loaded before opening dialog
                             if (_categories.isEmpty) {
                               await _fetchCategories();
                             }
@@ -727,7 +724,6 @@ class _EditServiceDialogState extends State<EditServiceDialog> {
         _loadingCategories = false;
       });
 
-      // Find the matching category for this service
       if (_categories.isNotEmpty) {
         try {
           _selectedCategory = _categories.firstWhere(
@@ -743,7 +739,7 @@ class _EditServiceDialogState extends State<EditServiceDialog> {
             'EditServiceDialog - Using first category as fallback: ${_selectedCategory?.name}',
           );
         }
-        setState(() {}); // Trigger rebuild to show selected category
+        setState(() {});
       } else {
         _selectedCategory = null;
         print('EditServiceDialog - No categories available');

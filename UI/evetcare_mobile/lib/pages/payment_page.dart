@@ -34,42 +34,48 @@ class _PaymentPageState extends State<PaymentPage> {
   final _formKey = GlobalKey<FormState>();
 
   bool _isProcessing = false;
-
-  // Saved payment details
-  String _savedCardNumber = '';
-  String _savedExpiry = '';
-  String _savedCvv = '';
-  String _savedName = '';
-  String _savedZip = '';
-  bool _savePaymentDetails = true;
+  bool _cardFormComplete = false;
+  bool _stripeInitialized = false;
 
   // Controllers for text fields
-  late TextEditingController _cardNumberController;
-  late TextEditingController _expiryController;
-  late TextEditingController _cvvController;
   late TextEditingController _nameController;
   late TextEditingController _zipController;
 
   @override
   void initState() {
     super.initState();
-    _initializeControllers();
-    _loadSavedPaymentDetails();
+    try {
+      _initializeControllers();
+      _loadSavedPaymentDetails();
+      _initializeStripe();
+    } catch (e) {
+      print('Error in PaymentPage initState: $e');
+    }
+  }
+
+  Future<void> _initializeStripe() async {
+    try {
+      // Ensure Stripe is properly initialized
+      await Stripe.instance.applySettings();
+      setState(() {
+        _stripeInitialized = true;
+      });
+      print('Stripe initialized successfully in PaymentPage');
+    } catch (e) {
+      print('Error initializing Stripe in PaymentPage: $e');
+      setState(() {
+        _stripeInitialized = false;
+      });
+    }
   }
 
   void _initializeControllers() {
-    _cardNumberController = TextEditingController();
-    _expiryController = TextEditingController();
-    _cvvController = TextEditingController();
     _nameController = TextEditingController();
     _zipController = TextEditingController();
   }
 
   @override
   void dispose() {
-    _cardNumberController.dispose();
-    _expiryController.dispose();
-    _cvvController.dispose();
     _nameController.dispose();
     _zipController.dispose();
     super.dispose();
@@ -112,6 +118,13 @@ class _PaymentPageState extends State<PaymentPage> {
               // Payment Form
               _buildPaymentForm(),
               const SizedBox(height: 24),
+
+              // Payment Button - Now below the form
+              _buildPaymentButton(),
+              const SizedBox(height: 16),
+
+              // Info text
+              _buildInfoText(),
             ],
           ),
         ),
@@ -123,32 +136,19 @@ class _PaymentPageState extends State<PaymentPage> {
   Future<void> _loadSavedPaymentDetails() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      setState(() {
-        _savedCardNumber = prefs.getString('saved_card_number') ?? '';
-        _savedExpiry = prefs.getString('saved_expiry') ?? '';
-        _savedCvv = prefs.getString('saved_cvv') ?? '';
-        _savedName = prefs.getString('saved_name') ?? '';
-        _savedZip = prefs.getString('saved_zip') ?? '';
-        _savePaymentDetails = prefs.getBool('save_payment_details') ?? true;
-      });
 
-      // Populate controllers with saved data
-      _cardNumberController.text = _savedCardNumber;
-      _expiryController.text = _savedExpiry;
-      _cvvController.text = _savedCvv;
-      _nameController.text = _savedName;
-      _zipController.text = _savedZip;
+      // Populate controllers with saved data or test data
+      _nameController.text = prefs.getString('saved_name') ?? 'John Doe';
+      _zipController.text = prefs.getString('saved_zip') ?? '12345';
 
-      print('Loaded saved payment details:');
-      print(
-        'Card Number: ${_savedCardNumber.isNotEmpty ? "${_savedCardNumber.substring(0, 4)}****" : "Not saved"}',
-      );
-      print('Expiry: $_savedExpiry');
-      print('CVV: ${_savedCvv.isNotEmpty ? "***" : "Not saved"}');
-      print('Name: $_savedName');
-      print('ZIP: $_savedZip');
+      print('Loaded payment details:');
+      print('Name: ${_nameController.text}');
+      print('ZIP: ${_zipController.text}');
     } catch (e) {
       print('Error loading saved payment details: $e');
+      // Set test data as fallback
+      _nameController.text = 'John Doe';
+      _zipController.text = '12345';
     }
   }
 
@@ -157,27 +157,81 @@ class _PaymentPageState extends State<PaymentPage> {
     try {
       print('Saving payment details to storage...');
       final prefs = await SharedPreferences.getInstance();
-      if (_savePaymentDetails) {
-        await prefs.setString('saved_card_number', _savedCardNumber);
-        await prefs.setString('saved_expiry', _savedExpiry);
-        await prefs.setString('saved_cvv', _savedCvv);
-        await prefs.setString('saved_name', _savedName);
-        await prefs.setString('saved_zip', _savedZip);
-        await prefs.setBool('save_payment_details', _savePaymentDetails);
-        print('Payment details saved successfully');
-      } else {
-        // Clear saved details if user doesn't want to save
-        await prefs.remove('saved_card_number');
-        await prefs.remove('saved_expiry');
-        await prefs.remove('saved_cvv');
-        await prefs.remove('saved_name');
-        await prefs.remove('saved_zip');
-        await prefs.setBool('save_payment_details', false);
-        print('Payment details cleared from storage');
-      }
+
+      await prefs.setString('saved_name', _nameController.text);
+      await prefs.setString('saved_zip', _zipController.text);
+
+      print('Payment details saved successfully');
     } catch (e) {
       print('Error saving payment details: $e');
     }
+  }
+
+  // Show payment success dialog
+  void _showPaymentSuccessDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: Row(
+            children: [
+              Icon(Icons.check_circle, color: Colors.green, size: 28),
+              const SizedBox(width: 12),
+              const Text(
+                'Payment Successful!',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Your payment of \$${widget.amount.toStringAsFixed(2)} has been processed successfully.',
+                style: const TextStyle(fontSize: 16),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Pet: ${widget.petName}',
+                style: const TextStyle(fontSize: 14, color: Colors.grey),
+              ),
+              Text(
+                'Services: ${widget.serviceNames}',
+                style: const TextStyle(fontSize: 14, color: Colors.grey),
+              ),
+              Text(
+                'Date: ${widget.date} at ${widget.time}',
+                style: const TextStyle(fontSize: 14, color: Colors.grey),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Close dialog
+                Navigator.popUntil(
+                  context,
+                  (route) => route.isFirst,
+                ); // Go to home
+              },
+              child: const Text(
+                'OK',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Color.fromARGB(255, 90, 183, 226),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   Widget _buildAppointmentSummary() {
@@ -244,6 +298,47 @@ class _PaymentPageState extends State<PaymentPage> {
   }
 
   Widget _buildPaymentForm() {
+    if (!_stripeInitialized) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            "Payment Details",
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
+              color: Colors.grey[800],
+            ),
+          ),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.grey[50],
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.grey[200]!),
+            ),
+            child: const Center(
+              child: Column(
+                children: [
+                  CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      Color.fromARGB(255, 90, 183, 226),
+                    ),
+                  ),
+                  SizedBox(height: 16),
+                  Text(
+                    'Initializing payment system...',
+                    style: TextStyle(fontSize: 14, color: Colors.grey),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -256,34 +351,6 @@ class _PaymentPageState extends State<PaymentPage> {
           ),
         ),
         const SizedBox(height: 12),
-
-        // Stripe Payment Button
-        Container(
-          width: double.infinity,
-          height: 50,
-          child: ElevatedButton.icon(
-            onPressed: _isProcessing ? null : _handleStripePayment,
-            icon: Icon(Icons.payment, color: Colors.white),
-            label: Text(
-              'Enter Payment Details',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: Colors.white,
-              ),
-            ),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color.fromARGB(255, 90, 183, 226),
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-              elevation: 0,
-            ),
-          ),
-        ),
-
-        const SizedBox(height: 16),
 
         // Payment Details Form
         Container(
@@ -301,7 +368,7 @@ class _PaymentPageState extends State<PaymentPage> {
                   Icon(Icons.credit_card, color: Colors.grey[600], size: 20),
                   const SizedBox(width: 8),
                   Text(
-                    'Payment Details',
+                    'Card Information',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
@@ -312,85 +379,37 @@ class _PaymentPageState extends State<PaymentPage> {
               ),
               const SizedBox(height: 16),
 
-              // Card Number
-              TextFormField(
-                controller: _cardNumberController,
-                decoration: InputDecoration(
-                  labelText: 'Card Number',
-                  hintText: _savedCardNumber.isEmpty
-                      ? '4242 4242 4242 4242'
-                      : null,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  prefixIcon: Icon(Icons.credit_card, color: Colors.grey[600]),
+              // Stripe Card Form Field
+              CardFormField(
+                style: CardFormStyle(
+                  borderColor: Colors.grey[300]!,
+                  borderRadius: 8,
+                  fontSize: 16,
+                  placeholderColor: Colors.grey[400]!,
+                  textColor: Colors.grey[800]!,
                 ),
-                onChanged: (value) {
+                onCardChanged: (card) {
                   setState(() {
-                    _savedCardNumber = value;
+                    _cardFormComplete = card?.complete ?? false;
                   });
+                  print(
+                    'Card form changed - Complete: ${card?.complete ?? false}',
+                  );
                 },
               ),
-              const SizedBox(height: 12),
-
-              // Expiry and CVV Row
-              Row(
-                children: [
-                  Expanded(
-                    child: TextFormField(
-                      controller: _expiryController,
-                      decoration: InputDecoration(
-                        labelText: 'Expiry (MM/YY)',
-                        hintText: _savedExpiry.isEmpty ? '12/25' : null,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                      onChanged: (value) {
-                        setState(() {
-                          _savedExpiry = value;
-                        });
-                      },
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: TextFormField(
-                      controller: _cvvController,
-                      decoration: InputDecoration(
-                        labelText: 'CVV',
-                        hintText: _savedCvv.isEmpty ? '123' : null,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                      onChanged: (value) {
-                        setState(() {
-                          _savedCvv = value;
-                        });
-                      },
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 16),
 
               // Name on Card
               TextFormField(
                 controller: _nameController,
                 decoration: InputDecoration(
                   labelText: 'Name on Card',
-                  hintText: _savedName.isEmpty ? 'John Doe' : null,
+                  hintText: 'John Doe',
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
                   prefixIcon: Icon(Icons.person, color: Colors.grey[600]),
                 ),
-                onChanged: (value) {
-                  setState(() {
-                    _savedName = value;
-                  });
-                },
               ),
               const SizedBox(height: 12),
 
@@ -399,40 +418,14 @@ class _PaymentPageState extends State<PaymentPage> {
                 controller: _zipController,
                 decoration: InputDecoration(
                   labelText: 'ZIP Code',
-                  hintText: _savedZip.isEmpty ? '12345' : null,
+                  hintText: '12345',
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
                   prefixIcon: Icon(Icons.location_on, color: Colors.grey[600]),
                 ),
-                onChanged: (value) {
-                  setState(() {
-                    _savedZip = value;
-                  });
-                },
               ),
               const SizedBox(height: 16),
-
-              // Save Payment Details Checkbox
-              Row(
-                children: [
-                  Checkbox(
-                    value: _savePaymentDetails,
-                    onChanged: (value) {
-                      setState(() {
-                        _savePaymentDetails = value ?? true;
-                      });
-                    },
-                    activeColor: const Color.fromARGB(255, 90, 183, 226),
-                  ),
-                  Expanded(
-                    child: Text(
-                      'Save payment details for future use',
-                      style: TextStyle(fontSize: 14, color: Colors.grey[700]),
-                    ),
-                  ),
-                ],
-              ),
 
               // Test Card Info
               Container(
@@ -475,100 +468,58 @@ class _PaymentPageState extends State<PaymentPage> {
             ],
           ),
         ),
-
-        const SizedBox(height: 16),
-
-        // Info text
-        Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: Colors.blue[50],
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: Colors.blue[200]!),
-          ),
-          child: Row(
-            children: [
-              Icon(Icons.info_outline, color: Colors.blue[600], size: 20),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  'Your payment details will be securely handled by Stripe',
-                  style: TextStyle(fontSize: 12, color: Colors.blue[700]),
-                ),
-              ),
-            ],
-          ),
-        ),
       ],
     );
   }
 
-  Future<void> _handlePayment() async {
-    await _handleStripePayment();
+  Widget _buildPaymentButton() {
+    return Container(
+      width: double.infinity,
+      height: 50,
+      child: ElevatedButton.icon(
+        onPressed: (_isProcessing || !_cardFormComplete || !_stripeInitialized)
+            ? null
+            : _handleStripePayment,
+        icon: Icon(Icons.payment, color: Colors.white),
+        label: Text(
+          _isProcessing ? 'Processing Payment...' : 'Pay Now',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: Colors.white,
+          ),
+        ),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: const Color.fromARGB(255, 90, 183, 226),
+          foregroundColor: Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          elevation: 0,
+        ),
+      ),
+    );
   }
 
-  Future<void> _handleCashPayment() async {
-    setState(() {
-      _isProcessing = true;
-    });
-
-    try {
-      // Simulate payment processing
-      await Future.delayed(const Duration(seconds: 2));
-
-      // Call payment API for cash payment
-      final paymentData = {
-        "appointmentId": widget.appointmentId,
-        "amount": widget.amount,
-        "paymentMethod": "Cash",
-        "status": "completed",
-        "transactionDate": DateTime.now().toIso8601String(),
-      };
-
-      print('Processing cash payment: ${json.encode(paymentData)}');
-
-      final response = await http.post(
-        Uri.parse('http://10.0.2.2:5081/Payments'),
-        headers: {
-          'Authorization': 'Bearer ${Authorization.token}',
-          'Content-Type': 'application/json',
-        },
-        body: json.encode(paymentData),
-      );
-
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Cash payment completed successfully!'),
-              backgroundColor: Colors.green,
+  Widget _buildInfoText() {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.blue[50],
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.blue[200]!),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.info_outline, color: Colors.blue[600], size: 20),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              'Your payment details will be securely handled by Stripe',
+              style: TextStyle(fontSize: 12, color: Colors.blue[700]),
             ),
-          );
-
-          // Navigate back to home page
-          Navigator.popUntil(context, (route) => route.isFirst);
-        }
-      } else {
-        throw Exception(
-          'Payment failed: ${response.statusCode} - ${response.body}',
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Payment failed: $e'),
-            backgroundColor: Colors.red,
           ),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isProcessing = false;
-        });
-      }
-    }
+        ],
+      ),
+    );
   }
 
   Future<void> _handleStripePayment() async {
@@ -577,10 +528,19 @@ class _PaymentPageState extends State<PaymentPage> {
     });
 
     try {
+      // Validate Stripe configuration first
+      if (!StripeConfig.publishableKey.startsWith('pk_test_') &&
+          !StripeConfig.publishableKey.startsWith('pk_live_')) {
+        throw Exception(
+          'Invalid Stripe API key configuration. Please check your Stripe setup.',
+        );
+      }
+
       print('=== STRIPE PAYMENT API CALL START ===');
       print('Appointment ID: ${widget.appointmentId}');
       print('Amount: \$${widget.amount}');
       print('Invoice Data: ${widget.invoiceData}');
+      print('Stripe Key: ${StripeConfig.publishableKey.substring(0, 10)}...');
 
       // Get the invoice ID from the invoice data
       int? invoiceId;
@@ -657,43 +617,120 @@ class _PaymentPageState extends State<PaymentPage> {
         throw Exception('Client secret not received from server');
       }
 
-      print('Configuring Stripe payment sheet...');
-      // Configure payment sheet
-      await Stripe.instance.initPaymentSheet(
-        paymentSheetParameters: SetupPaymentSheetParameters(
-          paymentIntentClientSecret: clientSecret,
-          merchantDisplayName: 'eVetCare',
-          style: ThemeMode.system,
-          appearance: PaymentSheetAppearance(
-            colors: PaymentSheetAppearanceColors(
-              primary: const Color.fromARGB(255, 90, 183, 226),
+      print('Processing payment with Stripe card form...');
+
+      // Create payment method using the card form data
+      final paymentMethod = await Stripe.instance.createPaymentMethod(
+        params: PaymentMethodParams.card(
+          paymentMethodData: PaymentMethodData(
+            billingDetails: BillingDetails(
+              name: _nameController.text,
+              address: Address(
+                line1: '',
+                line2: '',
+                city: '',
+                state: '',
+                country: '',
+                postalCode: _zipController.text,
+              ),
             ),
           ),
         ),
       );
 
-      print('Presenting Stripe payment sheet...');
-      // Present payment sheet
-      await Stripe.instance.presentPaymentSheet();
-      print('Payment sheet completed successfully');
+      print('Payment method created: ${paymentMethod.id}');
 
-      // If we reach here, payment was successful
-      if (mounted) {
-        print('Payment completed successfully!');
-        print('Saving payment details...');
-
-        // Save payment details if user opted to save them
-        await _savePaymentDetailsToStorage();
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Payment completed successfully!'),
-            backgroundColor: Colors.green,
+      // Confirm payment with the client secret
+      final paymentResult = await Stripe.instance.confirmPayment(
+        paymentIntentClientSecret: clientSecret,
+        data: PaymentMethodParams.card(
+          paymentMethodData: PaymentMethodData(
+            billingDetails: BillingDetails(
+              name: _nameController.text,
+              address: Address(
+                line1: '',
+                line2: '',
+                city: '',
+                state: '',
+                country: '',
+                postalCode: _zipController.text,
+              ),
+            ),
           ),
-        );
+        ),
+      );
 
-        // Navigate back to home page
-        Navigator.popUntil(context, (route) => route.isFirst);
+      print('Payment confirmed successfully');
+      print('Payment Result: $paymentResult');
+
+      // Extract payment details from the result
+      final paymentIntent = paymentResult;
+      final paymentMethodId = paymentMethod.id;
+
+      // Log all the important IDs and details
+      print('=== PAYMENT DETAILS ===');
+      print('Payment Intent ID: ${paymentIntent?.id}');
+      print('Payment Method ID: $paymentMethodId');
+      print('Payment Status: ${paymentIntent?.status}');
+      print('Amount: ${paymentIntent?.amount}');
+      print('Currency: ${paymentIntent?.currency}');
+      print('Created: ${paymentIntent?.created}');
+
+      // Prepare payment data for API call
+      final paymentData = {
+        'invoiceId': invoiceId,
+        'amount': widget.amount,
+        'methodId': 1, // Default method ID for Stripe
+        'paymentDate': DateTime.now().toIso8601String(),
+        'paymentIntentId': paymentIntent?.id ?? '',
+        'paymentMethodId': paymentMethodId,
+        'status': paymentIntent?.status?.toString() ?? 'succeeded',
+        'customerName': _nameController.text,
+        'customerZip': _zipController.text,
+        'metadata': json.encode({
+          'petName': widget.petName,
+          'serviceNames': widget.serviceNames,
+          'appointmentDate': widget.date,
+          'appointmentTime': widget.time,
+          'appointmentId': widget.appointmentId,
+        }),
+        'currency': 'usd',
+      };
+
+      print('Payment Data to Send: $paymentData');
+
+      // Call your API to save payment
+      final savePaymentResponse = await http.post(
+        Uri.parse('${StripeConfig.apiUrl}/Payment'),
+        headers: {
+          'Authorization': 'Bearer ${Authorization.token}',
+          'Content-Type': 'application/json',
+        },
+        body: json.encode(paymentData),
+      );
+
+      print('Save Payment Response Status: ${savePaymentResponse.statusCode}');
+      print('Save Payment Response Body: ${savePaymentResponse.body}');
+
+      if (savePaymentResponse.statusCode == 200 ||
+          savePaymentResponse.statusCode == 201) {
+        print('Payment saved to database successfully');
+
+        // If we reach here, payment was successful
+        if (mounted) {
+          print('Payment completed successfully!');
+          print('Saving payment details...');
+
+          // Save payment details to local storage
+          await _savePaymentDetailsToStorage();
+
+          // Show success popup
+          _showPaymentSuccessDialog();
+        }
+      } else {
+        throw Exception(
+          'Failed to save payment to database: ${savePaymentResponse.statusCode} - ${savePaymentResponse.body}',
+        );
       }
     } on StripeException catch (e) {
       print('STRIPE EXCEPTION: ${e.error.code} - ${e.error.message}');

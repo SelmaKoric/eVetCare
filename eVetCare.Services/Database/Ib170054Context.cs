@@ -255,11 +255,25 @@ public partial class Ib170054Context : DbContext
         {
             entity.HasKey(e => e.PaymentId).HasName("PK__Payments__9B556A58A49F1F09");
 
+            entity.HasIndex(e => e.PaymentIntentId, "IX_Payments_PaymentIntentId");
+
+            entity.HasIndex(e => e.Status, "IX_Payments_Status");
+
             entity.Property(e => e.PaymentId).HasColumnName("PaymentID");
             entity.Property(e => e.Amount).HasColumnType("decimal(10, 2)");
+            entity.Property(e => e.Currency)
+                .HasMaxLength(3)
+                .HasDefaultValue("usd");
+            entity.Property(e => e.CustomerName).HasMaxLength(255);
+            entity.Property(e => e.CustomerZip).HasMaxLength(20);
             entity.Property(e => e.InvoiceId).HasColumnName("InvoiceID");
             entity.Property(e => e.IsActive).HasDefaultValue(true);
             entity.Property(e => e.MethodId).HasColumnName("MethodID");
+            entity.Property(e => e.PaymentIntentId).HasMaxLength(255);
+            entity.Property(e => e.PaymentMethodId).HasMaxLength(255);
+            entity.Property(e => e.Status)
+                .HasMaxLength(50)
+                .HasDefaultValue("pending");
 
             entity.HasOne(d => d.Invoice).WithMany(p => p.Payments)
                 .HasForeignKey(d => d.InvoiceId)

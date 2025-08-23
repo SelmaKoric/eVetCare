@@ -61,7 +61,6 @@ class _ViewMedicalRecordModalState extends State<ViewMedicalRecordModal> {
 
             const SizedBox(height: 16),
 
-            // Patient and Appointment Info
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
@@ -87,7 +86,6 @@ class _ViewMedicalRecordModalState extends State<ViewMedicalRecordModal> {
 
             const SizedBox(height: 20),
 
-            // Medical Record Content
             Expanded(
               child: SingleChildScrollView(
                 child: Column(
@@ -133,7 +131,6 @@ class _ViewMedicalRecordModalState extends State<ViewMedicalRecordModal> {
 
             const SizedBox(height: 24),
 
-            // Action Buttons
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -223,7 +220,6 @@ class _ViewMedicalRecordModalState extends State<ViewMedicalRecordModal> {
       ),
     ).then((result) {
       if (result == true) {
-        // Optionally refresh the medical record data here
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Medical data added successfully!'),

@@ -23,8 +23,7 @@ class ViewPatientPage extends StatefulWidget {
 class _ViewPatientScreenState extends State<ViewPatientPage> {
   List<Appointment> _appointments = [];
   bool _isLoadingAppointments = true;
-  Map<int, MedicalRecord?> _medicalRecords =
-      {}; // appointmentId -> medicalRecord
+  Map<int, MedicalRecord?> _medicalRecords = {};
 
   @override
   void initState() {
@@ -41,7 +40,6 @@ class _ViewPatientScreenState extends State<ViewPatientPage> {
       final fetchedAppointments = await patientProvider
           .getAppointmentsForPatient(widget.patient.petId!);
 
-      // Create medical records map from appointment data
       final Map<int, MedicalRecord?> medicalRecords = {};
 
       for (final appointment in fetchedAppointments) {
@@ -286,7 +284,6 @@ class _ViewPatientScreenState extends State<ViewPatientPage> {
                 ),
                 ElevatedButton.icon(
                   onPressed: () {
-                    // TODO: Navigate to Edit Patient screen, passing widget.patient
                     print("Edit button pressed for ${widget.patient.name}");
                   },
                   icon: const Icon(Icons.edit, color: Colors.white),
@@ -351,7 +348,6 @@ class _ViewPatientScreenState extends State<ViewPatientPage> {
       );
     }
 
-    // Sort appointments by date (newest first) and take the first 3
     final sortedAppointments = List<Appointment>.from(_appointments);
     sortedAppointments.sort(
       (a, b) => DateTime.parse(b.date).compareTo(DateTime.parse(a.date)),
@@ -418,7 +414,6 @@ class _ViewPatientScreenState extends State<ViewPatientPage> {
     final existingRecord = _medicalRecords[appointment.appointmentId];
 
     if (existingRecord != null) {
-      // Show Edit button for existing records
       return ElevatedButton.icon(
         onPressed: () =>
             _showEditMedicalRecordModal(appointment, existingRecord),
@@ -434,7 +429,6 @@ class _ViewPatientScreenState extends State<ViewPatientPage> {
         ),
       );
     } else {
-      // Show Add Note button for appointments without records
       return ElevatedButton.icon(
         onPressed: () => _showAddMedicalRecordModal(appointment),
         icon: const Icon(Icons.note_add, size: 16),
@@ -460,7 +454,7 @@ class _ViewPatientScreenState extends State<ViewPatientPage> {
       ),
     ).then((result) {
       if (result == true) {
-        _loadAppointments(); // Refresh to show the new record
+        _loadAppointments();
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Medical record added successfully!'),
@@ -484,7 +478,7 @@ class _ViewPatientScreenState extends State<ViewPatientPage> {
       ),
     ).then((result) {
       if (result == true) {
-        _loadAppointments(); // Refresh to show updated record
+        _loadAppointments();
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Medical record updated successfully!'),

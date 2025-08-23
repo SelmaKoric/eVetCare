@@ -1,7 +1,6 @@
 import 'package:evetcare_mobile/utils/authorization.dart';
 import 'package:flutter/material.dart';
 import '../core/api_service.dart';
-import '../pages/home_page.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});

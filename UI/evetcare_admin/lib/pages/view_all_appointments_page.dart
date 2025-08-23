@@ -22,8 +22,7 @@ class ViewAllAppointmentsPage extends StatefulWidget {
 class _ViewAllAppointmentsScreenState extends State<ViewAllAppointmentsPage> {
   List<Appointment> _appointments = [];
   bool _isLoading = true;
-  Map<int, MedicalRecord?> _medicalRecords =
-      {}; // appointmentId -> medicalRecord
+  Map<int, MedicalRecord?> _medicalRecords = {};
 
   @override
   void initState() {
@@ -38,12 +37,10 @@ class _ViewAllAppointmentsScreenState extends State<ViewAllAppointmentsPage> {
         widget.patient.petId!,
       );
 
-      // Create medical records map from appointment data
       final Map<int, MedicalRecord?> medicalRecords = {};
 
       for (final appointment in data) {
         if (appointment.medicalRecordId != null) {
-          // Create a basic medical record from appointment data
           medicalRecords[appointment.appointmentId] = MedicalRecord(
             medicalRecordId: appointment.medicalRecordId!,
             petId: appointment.petId,
@@ -88,7 +85,6 @@ class _ViewAllAppointmentsScreenState extends State<ViewAllAppointmentsPage> {
     final existingRecord = _medicalRecords[appointment.appointmentId];
 
     if (existingRecord != null) {
-      // Show Edit button for existing records
       return ElevatedButton.icon(
         onPressed: () =>
             _showEditMedicalRecordModal(appointment, existingRecord),
@@ -104,7 +100,6 @@ class _ViewAllAppointmentsScreenState extends State<ViewAllAppointmentsPage> {
         ),
       );
     } else {
-      // Show Add Note button for appointments without records
       return ElevatedButton.icon(
         onPressed: () => _showAddMedicalRecordModal(appointment),
         icon: const Icon(Icons.note_add, size: 16),
@@ -130,7 +125,7 @@ class _ViewAllAppointmentsScreenState extends State<ViewAllAppointmentsPage> {
       ),
     ).then((result) {
       if (result == true) {
-        _loadAppointments(); // Refresh to show the new record
+        _loadAppointments();
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Medical record added successfully!'),
@@ -154,7 +149,7 @@ class _ViewAllAppointmentsScreenState extends State<ViewAllAppointmentsPage> {
       ),
     ).then((result) {
       if (result == true) {
-        _loadAppointments(); // Refresh to show updated record
+        _loadAppointments();
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Medical record updated successfully!'),

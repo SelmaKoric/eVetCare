@@ -2,7 +2,6 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import '../core/api_service.dart';
-import '../providers/api_provider.dart';
 import '../models/gender.dart';
 import '../models/species.dart';
 import '../models/pet.dart';
