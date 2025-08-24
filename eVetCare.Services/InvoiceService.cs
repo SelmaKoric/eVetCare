@@ -26,11 +26,11 @@ namespace eVetCare.Services
             return queryFilter;
         }
 
-        public override void BeforeInsert(InvoiceInsertRequest request, Invoice entity)
+        protected override void BeforeInsert(InvoiceInsertRequest request, Database.Invoice entity)
         {
             var appointment = _context.Appointments
                 .Include(a => a.AppointmentServices)
-                .ThenInclude(asv => asv.Service)
+                .ThenInclude(x => x.Service)
                 .FirstOrDefault(a => a.AppointmentId == request.AppointmentId);
 
             if (appointment == null)
@@ -39,20 +39,20 @@ namespace eVetCare.Services
             entity.AppointmentId = request.AppointmentId;
             entity.IssueDate = request.IssueDate;
 
-            decimal totalAmount = 0;
+            entity.InvoiceItems ??= new List<Database.InvoiceItem>();
+
+            if (request.ServiceIds == null || request.ServiceIds.Count == 0)
+                throw new Exception("At least one ServiceId is required.");
+
+            decimal totalAmount = 0m;
 
             foreach (var serviceId in request.ServiceIds)
             {
-                var service = _context.Services.FirstOrDefault(s => s.ServiceId == serviceId);
-                if (service == null)
-                    throw new Exception($"Service with ID {serviceId} not found.");
+                var service = _context.Services.FirstOrDefault(s => s.ServiceId == serviceId)
+                              ?? throw new Exception($"Service with ID {serviceId} not found.");
 
-                entity.InvoiceItems.Add(new Database.InvoiceItem
-                {
-                    ServiceId = serviceId
-                });
-
-                totalAmount += service.Price ?? 0;
+                entity.InvoiceItems.Add(new Database.InvoiceItem { ServiceId = serviceId });
+                totalAmount += service.Price ?? 0m;
             }
 
             entity.TotalAmount = totalAmount;

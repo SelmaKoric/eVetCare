@@ -19,7 +19,7 @@ namespace eVetCare.Services
             _config = config;
         }
 
-        public override void BeforeInsert(PaymentInsertRequest request, Payment entity)
+        protected override void BeforeInsert(PaymentInsertRequest request, Payment entity)
         {
             var invoice = _context.Invoices.FirstOrDefault(i => i.InvoiceId == request.InvoiceId);
 

@@ -1,0 +1,72 @@
+# Build artifacts
+**/bin/
+**/obj/
+**/.vs/
+**/.vscode/
+
+# Dependencies
+**/node_modules/
+**/packages/
+
+# IDE files
+**/.idea/
+**/*.user
+**/*.suo
+**/*.userosscache
+**/*.sln.docstates
+
+# OS generated files
+**/.DS_Store
+**/.DS_Store?
+**/_*
+**/.Trashes
+**/ehthumbs.db
+**/Thumbs.db
+
+# Logs
+**/*.log
+
+# Runtime data
+**/pids
+**/*.pid
+**/*.seed
+**/*.pid.lock
+
+# Coverage directory used by tools like istanbul
+**/coverage/
+
+# Temporary folders
+**/tmp/
+**/temp/
+
+# UI projects (not needed for backend builds)
+UI/
+
+# Git
+.git/
+.gitignore
+
+# Docker files
+Dockerfile*
+docker-compose*.yml
+.dockerignore
+
+# Documentation
+README.md
+*.md
+
+# Test files
+**/test/
+**/tests/
+**/*.test.*
+**/*.spec.*
+
+# Flutter/Dart files
+**/pubspec.lock
+**/analysis_options.yaml
+**/android/
+**/ios/
+**/web/
+**/windows/
+**/macos/
+**/linux/

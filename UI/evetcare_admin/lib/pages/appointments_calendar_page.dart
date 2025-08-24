@@ -170,6 +170,51 @@ class _AppointmentsCalendarPageState extends State<AppointmentsCalendarPage> {
                   ),
                 ),
                 const SizedBox(width: 12),
+                // Add navigation buttons
+                IconButton(
+                  onPressed: () {
+                    setState(() {
+                      _selectedDate = _selectedDate.subtract(
+                        const Duration(days: 1),
+                      );
+                      _eventsAddedForDate = false;
+                      _didInitialFetch = false;
+                    });
+                  },
+                  icon: const Icon(Icons.chevron_left),
+                  tooltip: 'Previous Day',
+                ),
+                IconButton(
+                  onPressed: () {
+                    setState(() {
+                      _selectedDate = _selectedDate.add(
+                        const Duration(days: 1),
+                      );
+                      _eventsAddedForDate = false;
+                      _didInitialFetch = false;
+                    });
+                  },
+                  icon: const Icon(Icons.chevron_right),
+                  tooltip: 'Next Day',
+                ),
+                const SizedBox(width: 8),
+                ElevatedButton(
+                  onPressed: () {
+                    setState(() {
+                      _selectedDate = DateTime.now();
+                      _eventsAddedForDate = false;
+                      _didInitialFetch = false;
+                    });
+                  },
+                  child: const Text('Today'),
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
                 ElevatedButton.icon(
                   onPressed: () =>
                       _showAddAppointmentDialog(context, _selectedDate),
@@ -183,6 +228,29 @@ class _AppointmentsCalendarPageState extends State<AppointmentsCalendarPage> {
                   ),
                 ),
               ],
+            ),
+            const SizedBox(height: 12),
+            // Date navigation info
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.blue[50],
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.blue[200]!),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.info_outline, size: 16, color: Colors.blue[700]),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Viewing appointments for ${DateFormat('EEEE, MMMM d, yyyy').format(_selectedDate)}',
+                    style: TextStyle(
+                      color: Colors.blue[700],
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
             ),
             const SizedBox(height: 12),
             Expanded(
@@ -203,8 +271,35 @@ class _AppointmentsCalendarPageState extends State<AppointmentsCalendarPage> {
                     return const Center(child: CircularProgressIndicator());
                   }
                   if (provider.appointments.isEmpty) {
-                    return const Center(
-                      child: Text('No appointments for this date.'),
+                    return Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.event_busy,
+                            size: 64,
+                            color: Colors.grey[400],
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'No appointments for ${DateFormat('MMMM d, yyyy').format(_selectedDate)}',
+                            style: TextStyle(
+                              fontSize: 18,
+                              color: Colors.grey[600],
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Use the navigation buttons or date picker to browse other dates',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey[500],
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
+                      ),
                     );
                   }
                   return DayView(

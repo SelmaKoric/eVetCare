@@ -40,15 +40,12 @@ namespace eVetCare.Services
             return queryFilter;
         }
 
-        public override void BeforeInsert(PetsInsertRequest request, Pet entity)
+        protected override void BeforeInsert(PetsInsertRequest request, Pet entity)
         {
             if (request.OwnerId.HasValue)
             {
                 var existingOwner = _context.Users.FirstOrDefault(u => u.UserId == request.OwnerId.Value);
-
-                if (existingOwner == null)
-                    throw new Exception("Selected owner does not exist.");
-
+                if (existingOwner == null) throw new Exception("Selected owner does not exist.");
                 entity.OwnerId = existingOwner.UserId;
             }
             else
@@ -70,7 +67,6 @@ namespace eVetCare.Services
 
                     _context.Users.Add(newOwner);
                     _context.SaveChanges();
-
                     entity.OwnerId = newOwner.UserId;
                 }
                 else
@@ -81,9 +77,7 @@ namespace eVetCare.Services
 
             if (request.GenderId.HasValue &&
                 !_context.Genders.Any(g => g.GenderId == request.GenderId.Value))
-            {
                 throw new Exception("Invalid GenderId provided.");
-            }
 
             entity.GenderId = request.GenderId;
 
@@ -104,17 +98,10 @@ namespace eVetCare.Services
             }
         }
 
-        public override void BeforeUpdate(PetsUpdateRequest request, Pet entity)
+        protected override void BeforeUpdate(PetsUpdateRequest request, Pet entity)
         {
-
-            if (request.Age.HasValue)
-            {
-                entity.Age = request.Age.Value;
-            }
-            if (request.Weight.HasValue)
-            {
-                entity.Weight = request.Weight.Value;
-            }
+            if (request.Age.HasValue) entity.Age = request.Age.Value;
+            if (request.Weight.HasValue) entity.Weight = request.Weight.Value;
 
             if (request.Photo != null)
             {
@@ -143,11 +130,8 @@ namespace eVetCare.Services
                    .ThenInclude(a => a.Service)
                 .FirstOrDefault(a => a.PetId == id);
 
-            if (entity == null)
-                return null!;
-
+            if (entity == null) return null!;
             return _mapper.Map<Model.Pets>(entity);
         }
     }
 }
-

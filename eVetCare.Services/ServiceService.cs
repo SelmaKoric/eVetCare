@@ -41,7 +41,7 @@ namespace eVetCare.Services
             return queryFilter;
         }
 
-        public override void BeforeUpdate(ServiceUpdateRequest request, Database.Service entity)
+        protected override void BeforeUpdate(ServiceUpdateRequest request, Database.Service entity)
         {
             if (request.CategoryId == 0)
                 entity.CategoryId = null;

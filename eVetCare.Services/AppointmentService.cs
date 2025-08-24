@@ -69,7 +69,7 @@ namespace eVetCare.Services
             return queryFilter;
         }
 
-        public override void BeforeInsert(AppointmentInsertRequest request, Database.Appointment entity)
+        protected override void BeforeInsert(AppointmentInsertRequest request, Database.Appointment entity)
         {
             var newStart = RoundToMinute(request.Date.Date + request.Time);
             var newEnd = newStart + (request.Duration ?? TimeSpan.FromMinutes(30));
@@ -86,37 +86,25 @@ namespace eVetCare.Services
                 var roundedNewStart = RoundToMinute(newStart);
                 var roundedNewEnd = RoundToMinute(newEnd);
 
-                Console.WriteLine($"existingStart: {existingStart:yyyy-MM-dd HH:mm}, existingEnd: {existingEnd:yyyy-MM-dd HH:mm}, newStart: {roundedNewStart:yyyy-MM-dd HH:mm}, newEnd: {roundedNewEnd:yyyy-MM-dd HH:mm}");
-
                 if (existingStart < roundedNewEnd && existingEnd > roundedNewStart)
-                {
                     throw new AppointmentOverlapException();
-                }
             }
 
             if (!_context.Pets.Any(p => p.PetId == request.PetId))
-            {
                 throw new Exception("Invalid PetId provided.");
-            }
 
             if (request.ServiceIds == null || !request.ServiceIds.Any())
-            {
                 throw new Exception("At least one ServiceId must be provided.");
-            }
+
+            entity.AppointmentServices ??= new List<Database.AppointmentService>();
 
             foreach (var serviceId in request.ServiceIds)
             {
                 var service = _context.Services.FirstOrDefault(s => s.ServiceId == serviceId);
-
                 if (service == null)
-                {
                     throw new Exception($"Invalid ServiceId provided: {serviceId}");
-                }
 
-                entity.AppointmentServices.Add(new Database.AppointmentService
-                {
-                    ServiceId = serviceId
-                });
+                entity.AppointmentServices.Add(new Database.AppointmentService { ServiceId = serviceId });
             }
 
             if (request.CreatedByAdmin == true)
@@ -126,21 +114,14 @@ namespace eVetCare.Services
             else if (request.AppointmentStatus.HasValue)
             {
                 if (!_context.AppointmentStatuses.Any(s => s.AppointmentStatusId == request.AppointmentStatus.Value))
-                {
                     throw new Exception("Invalid AppointmentStatusId provided.");
-                }
+
                 entity.AppointmentStatusId = request.AppointmentStatus.Value;
             }
             else
             {
-                var defaultStatus = _context.AppointmentStatuses
-                    .FirstOrDefault(s => s.AppointmentStatusId == 1);
-
-                if (defaultStatus == null)
-                {
-                    throw new Exception("Default AppointmentStatus not found.");
-                }
-
+                var defaultStatus = _context.AppointmentStatuses.FirstOrDefault(s => s.AppointmentStatusId == 1)
+                                    ?? throw new Exception("Default AppointmentStatus not found.");
                 entity.AppointmentStatusId = defaultStatus.AppointmentStatusId;
             }
         }
