@@ -17,7 +17,7 @@ namespace eVetCare.Services.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "7.0.0")
+                .HasAnnotation("ProductVersion", "9.0.7")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -36,11 +36,17 @@ namespace eVetCare.Services.Migrations
                         .HasColumnType("int")
                         .HasDefaultValueSql("((1))");
 
+                    b.Property<bool>("CreatedByAdmin")
+                        .HasColumnType("bit");
+
                     b.Property<DateTime>("Date")
                         .HasColumnType("date");
 
                     b.Property<TimeSpan?>("Duration")
                         .HasColumnType("time");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
 
                     b.Property<int>("PetId")
                         .HasColumnType("int")
@@ -72,6 +78,9 @@ namespace eVetCare.Services.Migrations
                         .HasColumnType("int")
                         .HasColumnName("AppointmentID");
 
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
                     b.Property<int>("ServiceId")
                         .HasColumnType("int")
                         .HasColumnName("ServiceID");
@@ -93,6 +102,9 @@ namespace eVetCare.Services.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("AppointmentStatusId"));
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -122,6 +134,9 @@ namespace eVetCare.Services.Migrations
                         .HasMaxLength(255)
                         .HasColumnType("nvarchar(255)");
 
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
                     b.Property<int>("MedicalRecordId")
                         .HasColumnType("int")
                         .HasColumnName("MedicalRecordID");
@@ -142,6 +157,9 @@ namespace eVetCare.Services.Migrations
                         .HasColumnName("GenderID");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("GenderId"));
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -170,6 +188,9 @@ namespace eVetCare.Services.Migrations
                         .HasColumnType("int")
                         .HasColumnName("AppointmentID");
 
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
                     b.Property<DateTime>("IssueDate")
                         .HasColumnType("date");
 
@@ -197,6 +218,9 @@ namespace eVetCare.Services.Migrations
                         .HasColumnType("int")
                         .HasColumnName("InvoiceID");
 
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
                     b.Property<int>("ServiceId")
                         .HasColumnType("int")
                         .HasColumnName("ServiceID");
@@ -219,6 +243,9 @@ namespace eVetCare.Services.Migrations
                         .HasColumnName("LabResultID");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("LabResultId"));
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
 
                     b.Property<int?>("LabTestId")
                         .HasColumnType("int");
@@ -248,6 +275,9 @@ namespace eVetCare.Services.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("LabTestId"));
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -289,6 +319,9 @@ namespace eVetCare.Services.Migrations
                         .HasColumnType("date")
                         .HasDefaultValueSql("(getdate())");
 
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
                     b.Property<string>("Notes")
                         .HasColumnType("text");
 
@@ -319,6 +352,9 @@ namespace eVetCare.Services.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("datetime")
                         .HasDefaultValueSql("(getdate())");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
 
                     b.Property<bool>("IsRead")
                         .HasColumnType("bit");
@@ -352,9 +388,24 @@ namespace eVetCare.Services.Migrations
                     b.Property<decimal>("Amount")
                         .HasColumnType("decimal(10, 2)");
 
+                    b.Property<string>("Currency")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("CustomerName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("CustomerZip")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<int>("InvoiceId")
                         .HasColumnType("int")
                         .HasColumnName("InvoiceID");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Metadata")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("MethodId")
                         .HasColumnType("int")
@@ -362,6 +413,15 @@ namespace eVetCare.Services.Migrations
 
                     b.Property<DateTime>("PaymentDate")
                         .HasColumnType("date");
+
+                    b.Property<string>("PaymentIntentId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PaymentMethodId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Status")
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("PaymentId")
                         .HasName("PK__Payments__9B556A58A49F1F09");
@@ -381,6 +441,9 @@ namespace eVetCare.Services.Migrations
                         .HasColumnName("MethodID");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("MethodId"));
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -412,6 +475,9 @@ namespace eVetCare.Services.Migrations
                     b.Property<int?>("GenderId")
                         .HasColumnType("int")
                         .HasColumnName("GenderID");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -463,6 +529,9 @@ namespace eVetCare.Services.Migrations
                         .HasColumnType("datetime")
                         .HasDefaultValueSql("(getdate())");
 
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
                     b.Property<int>("PetId")
                         .HasColumnType("int")
                         .HasColumnName("PetID");
@@ -483,6 +552,9 @@ namespace eVetCare.Services.Migrations
                         .HasColumnName("ReminderID");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ReminderId"));
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
 
                     b.Property<DateTime?>("TargetDate")
                         .HasColumnType("datetime");
@@ -511,6 +583,9 @@ namespace eVetCare.Services.Migrations
                         .HasColumnName("RoleID");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("RoleId"));
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
 
                     b.Property<string>("RoleName")
                         .IsRequired()
@@ -542,6 +617,9 @@ namespace eVetCare.Services.Migrations
                     b.Property<int?>("DurationMinutes")
                         .HasColumnType("int");
 
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -567,6 +645,9 @@ namespace eVetCare.Services.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("CategoryId"));
 
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(50)
@@ -590,6 +671,9 @@ namespace eVetCare.Services.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("SpeciesId"));
 
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(50)
@@ -609,6 +693,9 @@ namespace eVetCare.Services.Migrations
                         .HasColumnName("StatID");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("StatId"));
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
 
                     b.Property<DateTime?>("LoggedAt")
                         .ValueGeneratedOnAdd()
@@ -637,6 +724,9 @@ namespace eVetCare.Services.Migrations
                         .HasColumnName("TreatmentID");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("TreatmentId"));
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
 
                     b.Property<int>("MedicalRecordId")
                         .HasColumnType("int")
@@ -674,7 +764,7 @@ namespace eVetCare.Services.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
-                    b.Property<bool?>("IsActive")
+                    b.Property<bool>("IsActive")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bit")
                         .HasDefaultValueSql("((1))");
@@ -721,6 +811,9 @@ namespace eVetCare.Services.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("UserRoleId"));
 
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
                     b.Property<int>("RoleId")
                         .HasColumnType("int")
                         .HasColumnName("RoleID");
@@ -750,6 +843,9 @@ namespace eVetCare.Services.Migrations
 
                     b.Property<DateTime>("DateGiven")
                         .HasColumnType("date");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
 
                     b.Property<int>("MedicalRecordId")
                         .HasColumnType("int");
