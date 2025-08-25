@@ -36,11 +36,9 @@ class _AppointmentHistoryPageState extends State<AppointmentHistoryPage> {
 
       print('Loaded ${_appointments.length} appointments');
 
-      // Debug: Print all status values from loaded appointments
       final statuses = _appointments.map((a) => a.status).toSet();
       print('Status values from API: $statuses');
 
-      // Debug: Print first few appointments with their status
       for (int i = 0; i < _appointments.length && i < 3; i++) {
         print(
           'Appointment ${i + 1}: ID=${_appointments[i].appointmentId}, Status="${_appointments[i].status}"',
@@ -129,7 +127,6 @@ class _AppointmentHistoryPageState extends State<AppointmentHistoryPage> {
             )
           : Column(
               children: [
-                // Filter indicator
                 if (_selectedFilter != 'All')
                   Container(
                     width: double.infinity,
@@ -172,7 +169,6 @@ class _AppointmentHistoryPageState extends State<AppointmentHistoryPage> {
                     ),
                   ),
 
-                // Appointments list
                 Expanded(
                   child: filteredAppointments.isEmpty
                       ? _buildEmptyState()
@@ -233,7 +229,6 @@ class _AppointmentHistoryPageState extends State<AppointmentHistoryPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Header with status
               Row(
                 children: [
                   Expanded(
@@ -501,8 +496,6 @@ class _AppointmentHistoryPageState extends State<AppointmentHistoryPage> {
   }
 
   void _editAppointment(Appointment appointment) {
-    // This would navigate to a book appointment page with editing mode
-    // For now, we'll just show a message
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text('Edit functionality will be implemented soon'),

@@ -2,12 +2,13 @@
 using eVetCare.Model.SearchObjects;
 using eVetCare.Services.Database;
 using eVetCare.Services.Interfaces;
+using eVetCare.Model.Requests;
 using MapsterMapper;
 using Microsoft.EntityFrameworkCore;
 
 namespace eVetCare.Services
 {
-	public class NotificationService : BaseService<Model.Notification, NotificationSearchObject, Database.Notification>, INotificationService
+	public class NotificationService : BaseCRUDService<Model.Notification, NotificationSearchObject, Database.Notification, NotificationUpsertRequest, NotificationUpsertRequest>, INotificationService
     {
 		public NotificationService(EVetCareContext context, IMapper mapper) : base(context, mapper)
         {

@@ -30,7 +30,6 @@ class _PetsPageState extends State<PetsPage> {
     });
 
     try {
-      // Debug: Print the current server configuration
       print('=== SERVER CONFIGURATION ===');
       print('API Server: ${config.baseUrl}');
       print(
@@ -195,7 +194,6 @@ class _PetsPageState extends State<PetsPage> {
   }
 
   Widget _buildPetCard(Map<String, dynamic> pet) {
-    // Debug: Log the pet data structure
     print('=== PET DATA DEBUG ===');
     print('Full pet data: $pet');
     print('Available keys: ${pet.keys.toList()}');
@@ -215,10 +213,8 @@ class _PetsPageState extends State<PetsPage> {
         ? (pet['weight'] as num).toDouble()
         : double.tryParse(pet['weight']?.toString() ?? '0.0') ?? 0.0;
 
-    // Convert weight from backend format to display format (divide by 10)
     final weight = rawWeight / 10.0;
 
-    // Try multiple possible field names for species
     final species =
         pet['speciesName'] ??
         pet['species'] ??
@@ -240,7 +236,6 @@ class _PetsPageState extends State<PetsPage> {
         padding: const EdgeInsets.all(16),
         child: Row(
           children: [
-            // Pet Icon instead of image
             Container(
               width: 60,
               height: 60,
@@ -256,7 +251,6 @@ class _PetsPageState extends State<PetsPage> {
             ),
             const SizedBox(width: 16),
 
-            // Pet Information
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -293,7 +287,6 @@ class _PetsPageState extends State<PetsPage> {
               ),
             ),
 
-            // Action Button
             Container(
               decoration: BoxDecoration(
                 color: const Color.fromARGB(255, 90, 183, 226).withOpacity(0.1),

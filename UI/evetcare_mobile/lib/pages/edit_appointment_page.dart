@@ -14,7 +14,6 @@ class EditAppointmentPage extends StatefulWidget {
 class _EditAppointmentPageState extends State<EditAppointmentPage> {
   final _formKey = GlobalKey<FormState>();
 
-  // Form controllers
   int? _selectedPetId;
   String? _selectedPetName;
   List<int> _selectedServiceIds = [];
@@ -23,18 +22,16 @@ class _EditAppointmentPageState extends State<EditAppointmentPage> {
   TimeOfDay? _selectedTime;
   String _selectedDuration = "01:00:00";
 
-  // Data from API
   List<Map<String, dynamic>> _pets = [];
   List<Map<String, dynamic>> _services = [];
 
-  // Duration options
   final List<String> _durationOptions = [
-    "00:30:00", // 30 minutes
-    "01:00:00", // 1 hour
-    "01:30:00", // 1.5 hours
-    "02:00:00", // 2 hours
-    "02:30:00", // 2.5 hours
-    "03:00:00", // 3 hours
+    "00:30:00", 
+    "01:00:00",
+    "01:30:00", 
+    "02:00:00", 
+    "02:30:00",
+    "03:00:00", 
   ];
 
   bool _isSubmitting = false;
@@ -51,12 +48,10 @@ class _EditAppointmentPageState extends State<EditAppointmentPage> {
     final appointment = widget.appointment;
     _selectedPetId = appointment.petId;
     _selectedPetName = appointment.petName;
-    // We'll set the service IDs after loading the services from API
     _selectedServiceNames = appointment.serviceNames
         .map((service) => service.name)
         .toList();
 
-    // Parse date and time
     try {
       final dateParts = appointment.date.split('-');
       if (dateParts.length == 3) {
@@ -123,7 +118,6 @@ class _EditAppointmentPageState extends State<EditAppointmentPage> {
       _services = services;
     });
 
-    // Match service names with their IDs
     _matchServiceNamesWithIds();
   }
 
@@ -181,27 +175,21 @@ class _EditAppointmentPageState extends State<EditAppointmentPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Pet Selection
                     _buildPetDropdown(),
                     const SizedBox(height: 24),
 
-                    // Services Selection
                     _buildServicesDropdown(),
                     const SizedBox(height: 24),
 
-                    // Date Selection
                     _buildDateField(),
                     const SizedBox(height: 24),
 
-                    // Time Selection
                     _buildTimeField(),
                     const SizedBox(height: 24),
 
-                    // Duration Selection
                     _buildDurationField(),
                     const SizedBox(height: 40),
 
-                    // Update Appointment Button
                     SizedBox(
                       width: double.infinity,
                       height: 50,
@@ -571,7 +559,6 @@ class _EditAppointmentPageState extends State<EditAppointmentPage> {
   }
 
   Future<void> _handleSubmit() async {
-    // Validate form using service
     final validationError = AppointmentService.validateAppointmentData(
       petId: _selectedPetId,
       serviceIds: _selectedServiceIds,
@@ -591,7 +578,6 @@ class _EditAppointmentPageState extends State<EditAppointmentPage> {
     });
 
     try {
-      // Prepare appointment data using service
       final appointmentData = AppointmentService.prepareAppointmentData(
         petId: _selectedPetId!,
         date: _selectedDate!,
@@ -612,7 +598,7 @@ class _EditAppointmentPageState extends State<EditAppointmentPage> {
             backgroundColor: Colors.green,
           ),
         );
-        Navigator.pop(context, true); // Return true to indicate success
+        Navigator.pop(context, true); 
       }
     } catch (e) {
       if (mounted) {
@@ -621,10 +607,8 @@ class _EditAppointmentPageState extends State<EditAppointmentPage> {
         final isOverlapError = errorInfo['isOverlapError'] as bool;
 
         if (isOverlapError) {
-          // Show a dialog for overlap errors to make it more prominent
           _showOverlapErrorDialog(errorMessage);
         } else {
-          // Show snackbar for other errors
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(errorMessage),

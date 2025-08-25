@@ -12,17 +12,13 @@ import 'pages/notifications_page.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize Stripe with error handling
   try {
-    // Validate the publishable key using our validator
     if (!StripeValidator.isValidPublishableKey(StripeConfig.publishableKey)) {
       throw Exception(StripeValidator.getValidationMessage());
     }
 
-    // Initialize Stripe with proper configuration
     Stripe.publishableKey = StripeConfig.publishableKey;
 
-    // Initialize PaymentConfiguration for Android
     await Stripe.instance.applySettings();
 
     print(
@@ -35,7 +31,6 @@ void main() async {
     print(
       'Please check your Stripe configuration in lib/core/stripe_config.dart',
     );
-    // Continue app initialization even if Stripe fails
   }
 
   runApp(const MyApp());
@@ -62,8 +57,6 @@ class MyApp extends StatelessWidget {
         '/book-appointment': (context) => const BookAppointmentPage(),
         '/appointment-history': (context) => const AppointmentHistoryPage(),
         '/notifications': (context) => const NotificationsPage(),
-        // Payment route should not be used directly - use Navigator.push with parameters instead
-        // '/payment': (context) => const PaymentPage(...),
       },
     );
   }

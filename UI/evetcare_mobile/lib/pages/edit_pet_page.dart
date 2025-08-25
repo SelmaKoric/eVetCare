@@ -29,17 +29,14 @@ class _EditPetPageState extends State<EditPetPage> {
   Gender? _selectedGender;
   bool _loadingGenders = true;
 
-  // Species dropdown
   List<Species> _species = [];
   Species? _selectedSpecies;
   bool _loadingSpecies = true;
 
-  // File picker for photo
   File? _selectedImageFile;
   String? _selectedImageName;
   String? _existingPhotoUrl;
 
-  // Loading state for form submission
   bool _isSubmitting = false;
 
   int? _tempGenderId;
@@ -88,7 +85,6 @@ class _EditPetPageState extends State<EditPetPage> {
         _loadingGenders = false;
       });
 
-      // Set selected gender based on pet data
       final petGenderId = widget.petData['genderId'];
       if (petGenderId != null) {
         _selectedGender = genders.firstWhere(
@@ -119,7 +115,6 @@ class _EditPetPageState extends State<EditPetPage> {
         _loadingSpecies = false;
       });
 
-      // Set selected species based on pet data
       final petSpeciesId = widget.petData['speciesId'];
       if (petSpeciesId != null) {
         _selectedSpecies = species.firstWhere(
@@ -157,7 +152,6 @@ class _EditPetPageState extends State<EditPetPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Pet Information Section
               const Text(
                 "Edit Pet Information",
                 style: TextStyle(
@@ -168,11 +162,9 @@ class _EditPetPageState extends State<EditPetPage> {
               ),
               const SizedBox(height: 16),
 
-              // Display current pet info (read-only)
               _buildReadOnlyInfo(),
               const SizedBox(height: 16),
 
-              // Editable fields section
               const Text(
                 "Editable Fields",
                 style: TextStyle(
@@ -183,7 +175,6 @@ class _EditPetPageState extends State<EditPetPage> {
               ),
               const SizedBox(height: 16),
 
-              // Age
               _buildTextField(
                 controller: _ageController,
                 label: "Age",
@@ -208,7 +199,6 @@ class _EditPetPageState extends State<EditPetPage> {
               ),
               const SizedBox(height: 16),
 
-              // Weight
               _buildTextField(
                 controller: _weightController,
                 label: "Weight",
@@ -233,11 +223,9 @@ class _EditPetPageState extends State<EditPetPage> {
               ),
               const SizedBox(height: 16),
 
-              // Photo Upload
               _buildPhotoUpload(),
               const SizedBox(height: 32),
 
-              // Submit Button
               SizedBox(
                 width: double.infinity,
                 height: 50,

@@ -26,7 +26,6 @@ class NotificationItem {
     );
   }
 
-  // Helper getters for backward compatibility
   int get id => notificationId;
   String get title => _extractTitleFromMessage();
   DateTime get timestamp => dateTimeSent;

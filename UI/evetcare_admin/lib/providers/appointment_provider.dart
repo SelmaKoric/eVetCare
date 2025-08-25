@@ -12,9 +12,9 @@ class Appointment {
   final String time;
   final List<ServiceName> serviceNames;
   final String status;
-  final int? statusId; // Add status ID field
+  final int? statusId;
   final bool isActive;
-  final String? duration; // Add duration field
+  final String? duration; 
 
   Appointment({
     required this.appointmentId,
@@ -25,7 +25,7 @@ class Appointment {
     required this.time,
     required this.serviceNames,
     required this.status,
-    this.statusId, // Add status ID parameter
+    this.statusId,
     required this.isActive,
     this.duration,
   });
@@ -45,9 +45,9 @@ class Appointment {
           [],
       status: json['status'],
       statusId:
-          json['statusId'] ?? json['appointmentStatus'], // Parse status ID
+          json['statusId'] ?? json['appointmentStatus'], 
       isActive: json['isActive'] ?? true,
-      duration: json['duration'], // Parse duration
+      duration: json['duration'],
     );
   }
 }

@@ -16,27 +16,24 @@ class BookAppointmentPage extends StatefulWidget {
 class _BookAppointmentPageState extends State<BookAppointmentPage> {
   final _formKey = GlobalKey<FormState>();
 
-  // Form controllers
   int? _selectedPetId;
   String? _selectedPetName;
   List<int> _selectedServiceIds = [];
   List<String> _selectedServiceNames = [];
   DateTime? _selectedDate;
   TimeOfDay? _selectedTime;
-  String _selectedDuration = "01:00:00"; // Default 1 hour
+  String _selectedDuration = "01:00:00"; 
 
-  // Data from API
   List<Map<String, dynamic>> _pets = [];
   List<Map<String, dynamic>> _services = [];
 
-  // Duration options
   final List<String> _durationOptions = [
-    "00:30:00", // 30 minutes
-    "01:00:00", // 1 hour
-    "01:30:00", // 1.5 hours
-    "02:00:00", // 2 hours
-    "02:30:00", // 2.5 hours
-    "03:00:00", // 3 hours
+    "00:30:00", 
+    "01:00:00",
+    "01:30:00", 
+    "02:00:00", 
+    "02:30:00", 
+    "03:00:00", 
   ];
 
   bool _isSubmitting = false;
@@ -136,27 +133,21 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Pet Selection
                     _buildPetDropdown(),
                     const SizedBox(height: 24),
 
-                    // Services Selection
                     _buildServicesDropdown(),
                     const SizedBox(height: 24),
 
-                    // Date Selection
                     _buildDateField(),
                     const SizedBox(height: 24),
 
-                    // Time Selection
                     _buildTimeField(),
                     const SizedBox(height: 24),
 
-                    // Duration Selection
                     _buildDurationField(),
                     const SizedBox(height: 40),
 
-                    // Book Appointment Button
                     SizedBox(
                       width: double.infinity,
                       height: 50,
@@ -234,7 +225,6 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
               isExpanded: true,
               icon: Icon(Icons.keyboard_arrow_down, color: Colors.grey[600]),
               items: _pets.map((pet) {
-                // Handle different field names for pet ID and name
                 final petId = pet['id'] ?? pet['petId'];
                 final petName = pet['name'] ?? pet['petName'] ?? 'Unknown Pet';
 
@@ -295,7 +285,6 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
           ),
           child: Column(
             children: [
-              // Selected services display
               if (_selectedServiceIds.isNotEmpty) ...[
                 Wrap(
                   spacing: 8,
@@ -326,7 +315,6 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
                 ),
                 const SizedBox(height: 12),
               ],
-              // Services dropdown
               DropdownButtonHideUnderline(
                 child: DropdownButton<int>(
                   hint: Text(
@@ -345,7 +333,6 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
                         ),
                       )
                       .map((service) {
-                        // Handle different field names for service ID and name
                         final serviceId = service['id'] ?? service['serviceId'];
                         final serviceName =
                             service['name'] ??
@@ -576,7 +563,6 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
   }
 
   Future<void> _handleSubmit() async {
-    // Validate form using service
     final validationError = AppointmentService.validateAppointmentData(
       petId: _selectedPetId,
       serviceIds: _selectedServiceIds,
@@ -596,7 +582,6 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
     });
 
     try {
-      // Prepare appointment data using service
       final appointmentData = AppointmentService.prepareAppointmentData(
         petId: _selectedPetId!,
         date: _selectedDate!,
@@ -612,10 +597,8 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
       );
 
       if (mounted) {
-        // Parse the response to get appointment ID
         final appointmentId = response['appointmentId'] ?? response['id'] ?? 0;
 
-        // Show payment modal (invoice will be created inside the modal)
         _showPaymentModal(appointmentId);
       }
     } catch (e) {
@@ -625,10 +608,8 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
         final isOverlapError = errorInfo['isOverlapError'] as bool;
 
         if (isOverlapError) {
-          // Show a dialog for overlap errors to make it more prominent
           _showOverlapErrorDialog(errorMessage);
         } else {
-          // Show snackbar for other errors
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(errorMessage),
@@ -655,21 +636,16 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
   }
 
   void _showPaymentModal(int appointmentId) {
-    // Debug: Print current service IDs
     print('Creating invoice with service IDs: $_selectedServiceIds');
     print('Selected service names: $_selectedServiceNames');
 
-    // Create invoice and get the response with actual pricing
     _createInvoice(appointmentId).then((invoiceData) {
       if (invoiceData != null) {
-        // Get the actual amount from the invoice response
         double actualAmount = _getActualAmountFromInvoice(invoiceData);
         print('Actual amount from invoice: $actualAmount');
 
-        // Store invoice data for payment screen
         _showPaymentDialog(appointmentId, actualAmount, invoiceData);
       } else {
-        // Fallback if invoice creation fails - use estimated amount
         double estimatedAmount = _calculateEstimatedAmount();
         _showPaymentDialog(appointmentId, estimatedAmount, null);
       }
@@ -752,7 +728,6 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
             TextButton(
               onPressed: () {
                 Navigator.of(context).pop();
-                // Navigate back to home page
                 Navigator.pop(context);
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
@@ -771,7 +746,6 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
             ElevatedButton(
               onPressed: () {
                 Navigator.of(context).pop();
-                // Navigate to payment page
                 Navigator.push(
                   context,
                   MaterialPageRoute(
@@ -813,29 +787,27 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
     // Base amount for appointment
     double baseAmount = 50.0;
 
-    // Add amount per service (you can adjust these values)
     double serviceAmount = _selectedServiceIds.length * 25.0;
 
-    // Add amount based on duration
     double durationAmount = 0.0;
     switch (_selectedDuration) {
       case "00:30:00":
-        durationAmount = 0.0; // No extra charge for 30 minutes
+        durationAmount = 0.0; 
         break;
       case "01:00:00":
-        durationAmount = 10.0; // $10 extra for 1 hour
+        durationAmount = 10.0; 
         break;
       case "01:30:00":
-        durationAmount = 20.0; // $20 extra for 1.5 hours
+        durationAmount = 20.0; 
         break;
       case "02:00:00":
-        durationAmount = 30.0; // $30 extra for 2 hours
+        durationAmount = 30.0; 
         break;
       case "02:30:00":
-        durationAmount = 40.0; // $40 extra for 2.5 hours
+        durationAmount = 40.0;
         break;
       case "03:00:00":
-        durationAmount = 50.0; // $50 extra for 3 hours
+        durationAmount = 50.0;
         break;
     }
 
@@ -844,11 +816,8 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
 
   double _getActualAmountFromInvoice(Map<String, dynamic> invoiceData) {
     try {
-      // Try to get the total amount from the invoice response
-      // The field name might vary based on your API response structure
       double amount = 0.0;
 
-      // Common field names for total amount in invoice responses
       if (invoiceData.containsKey('totalAmount')) {
         amount = (invoiceData['totalAmount'] as num).toDouble();
       } else if (invoiceData.containsKey('amount')) {
@@ -860,7 +829,6 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
       } else if (invoiceData.containsKey('invoiceTotal')) {
         amount = (invoiceData['invoiceTotal'] as num).toDouble();
       } else {
-        // If no amount field found, calculate from line items
         amount = _calculateAmountFromLineItems(invoiceData);
       }
 
@@ -868,7 +836,6 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
       return amount;
     } catch (e) {
       print('Error extracting amount from invoice: $e');
-      // Fallback to estimated amount
       return _calculateEstimatedAmount();
     }
   }
@@ -877,7 +844,6 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
     try {
       double total = 0.0;
 
-      // Look for line items or service details in the invoice
       List<dynamic> lineItems = [];
 
       if (invoiceData.containsKey('lineItems')) {
@@ -895,7 +861,6 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
           double price = 0.0;
           int quantity = 1;
 
-          // Try different field names for price
           if (item.containsKey('price')) {
             price = (item['price'] as num).toDouble();
           } else if (item.containsKey('amount')) {
@@ -904,7 +869,6 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
             price = (item['cost'] as num).toDouble();
           }
 
-          // Try different field names for quantity
           if (item.containsKey('quantity')) {
             quantity = (item['quantity'] as num).toInt();
           } else if (item.containsKey('qty')) {
@@ -925,7 +889,6 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
 
   Future<Map<String, dynamic>?> _createInvoice(int appointmentId) async {
     try {
-      // Ensure we have the current service IDs
       print('_createInvoice called with appointmentId: $appointmentId');
       print('Current _selectedServiceIds: $_selectedServiceIds');
       print('Current _selectedServiceNames: $_selectedServiceNames');
@@ -944,8 +907,6 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
       print('Invoice response type: ${response.runtimeType}');
       print('Invoice response keys: ${response.keys.toList()}');
 
-      // Store the invoice data for later use in payment screen
-      // You can access this data in the payment screen by passing it as a parameter
       return response;
     } catch (e) {
       print('Error creating invoice: $e');

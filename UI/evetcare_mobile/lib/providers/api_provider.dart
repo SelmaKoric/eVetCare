@@ -6,13 +6,11 @@ import '../core/config.dart' as config;
 class ApiProvider {
   static String get baseUrl => config.baseUrl;
 
-  // Headers for authenticated requests
   static Map<String, String> get _authHeaders => {
     'Authorization': 'Bearer ${Authorization.token}',
     'Content-Type': 'application/json',
   };
 
-  // Generic HTTP methods
   static Future<dynamic> get(String endpoint) async {
     print('ApiProvider: Making GET request to: $baseUrl$endpoint');
     print('ApiProvider: Headers: $_authHeaders');
@@ -82,7 +80,6 @@ class ApiProvider {
     }
   }
 
-  // Specific API methods
   static Future<List<Map<String, dynamic>>> getPets() async {
     final response = await get('/Pets?OwnerId=${Authorization.userId}');
 

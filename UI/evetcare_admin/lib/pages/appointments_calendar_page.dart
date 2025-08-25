@@ -7,10 +7,10 @@ import '../providers/patient_provider.dart';
 import '../providers/service_provider.dart';
 import '../models/patient.dart';
 import '../models/service.dart';
-import 'dart:convert'; // Added for jsonEncode
-import 'package:http/http.dart' as http; // Added for http
-import '../core/auth_utils.dart'; // For createHeaders
-import '../utils/authorization.dart'; // For Authorization.token
+import 'dart:convert'; 
+import 'package:http/http.dart' as http; 
+import '../core/auth_utils.dart'; 
+import '../utils/authorization.dart';
 
 class AppointmentsCalendarPage extends StatefulWidget {
   const AppointmentsCalendarPage({super.key});
@@ -70,7 +70,7 @@ class _AppointmentsCalendarPageState extends State<AppointmentsCalendarPage> {
           .map((a) => 'id:${a.appointmentId} time:${a.time} pet:${a.petName}')
           .toList(),
     );
-    _controller?.removeWhere((event) => true); // Clear all events
+    _controller?.removeWhere((event) => true); 
     for (final appt in appointments) {
       final timeParts = appt.time.split(":");
       final startHour = int.tryParse(timeParts[0]) ?? 0;
@@ -82,8 +82,7 @@ class _AppointmentsCalendarPageState extends State<AppointmentsCalendarPage> {
         startHour,
         startMinute,
       );
-      // Parse duration (HH:mm:ss)
-      Duration duration = const Duration(hours: 1); // default
+      Duration duration = const Duration(hours: 1); 
       if (appt.duration != null) {
         final durParts = appt.duration!.split(":");
         if (durParts.length >= 2) {
@@ -105,7 +104,7 @@ class _AppointmentsCalendarPageState extends State<AppointmentsCalendarPage> {
           endTime: end,
           description: "Owner: ${appt.ownerName}",
           color: _getStatusColor(appt.status),
-          event: appt, // <-- ADD THIS LINE
+          event: appt, 
         ),
       );
     }
@@ -170,7 +169,6 @@ class _AppointmentsCalendarPageState extends State<AppointmentsCalendarPage> {
                   ),
                 ),
                 const SizedBox(width: 12),
-                // Add navigation buttons
                 IconButton(
                   onPressed: () {
                     setState(() {
@@ -230,7 +228,6 @@ class _AppointmentsCalendarPageState extends State<AppointmentsCalendarPage> {
               ],
             ),
             const SizedBox(height: 12),
-            // Date navigation info
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               decoration: BoxDecoration(
@@ -327,17 +324,14 @@ class _AppointmentsCalendarPageState extends State<AppointmentsCalendarPage> {
                     },
                     eventTileBuilder: (date, events, bound, start, end) {
                       final event = events.first;
-                      // Extract owner name from description ("Owner: ...")
                       String ownerName = '';
                       if (event.description != null &&
                           event.description!.startsWith('Owner: ')) {
                         ownerName = event.description!.substring(7);
                       }
-                      // Compose title: PetName (OwnerName)
                       final titleText = ownerName.isNotEmpty
                           ? '${event.title} ($ownerName)'
                           : event.title ?? '';
-                      // Extract services from event (if available)
                       String servicesText = '';
                       if (event.event != null && event.event is Appointment) {
                         final appt = event.event as Appointment;
@@ -351,7 +345,6 @@ class _AppointmentsCalendarPageState extends State<AppointmentsCalendarPage> {
                             .where((s) => s.toString().isNotEmpty)
                             .join(', ');
                       }
-                      // Show services if available and not empty
                       final showServices = servicesText.isNotEmpty;
                       return Container(
                         decoration: BoxDecoration(
@@ -396,9 +389,9 @@ class _AppointmentsCalendarPageState extends State<AppointmentsCalendarPage> {
                       );
                     },
                     onEventTap: (events, date) {
-                      print('onEventTap triggered!'); // Debug print
+                      print('onEventTap triggered!'); 
                       final event = events.first;
-                      print('Tapped event: $event'); // Debug print
+                      print('Tapped event: $event'); 
                       if (event.event is Appointment) {
                         final appt = event.event as Appointment;
                         showDialog(
@@ -505,7 +498,7 @@ class _AddAppointmentDialogState extends State<_AddAppointmentDialog> {
   List<String> get _durationOptions {
     List<String> options = [];
     for (int min = 30; min <= 240; min += 30) {
-      options.add(min.toString()); // Store minutes as string
+      options.add(min.toString()); 
     }
     return options;
   }
@@ -697,8 +690,8 @@ class _AddAppointmentDialogState extends State<_AddAppointmentDialog> {
                       'time': formattedTime,
                       'duration': formattedDuration,
                       'serviceIds': _serviceIds,
-                      'appointmentStatus': 2, // Hardcoded
-                      'createdByAdmin': true, // Hardcoded
+                      'appointmentStatus': 2, 
+                      'createdByAdmin': true, 
                     };
                     try {
                       final response = await http.post(
@@ -713,7 +706,6 @@ class _AddAppointmentDialogState extends State<_AddAppointmentDialog> {
                       if (response.statusCode >= 200 &&
                           response.statusCode < 300) {
                         Navigator.of(context).pop();
-                        // Refresh calendar for the selected date
                         final appointmentProvider =
                             Provider.of<AppointmentProvider>(
                               context,
@@ -873,7 +865,6 @@ class _EditAppointmentDialogState extends State<_EditAppointmentDialog> {
         _services = services.result;
         _loading = false;
         _initFieldsFromAppointment();
-        // Ensure _petId is valid
         if (_petId != null && !_pets.any((pet) => pet.petId == _petId)) {
           _petId = null;
         }
@@ -923,7 +914,7 @@ class _EditAppointmentDialogState extends State<_EditAppointmentDialog> {
     final isApproved = _status == 'approved';
     final isConfirmed =
         widget.appointment.status.toLowerCase() ==
-        'approved'; // Check for "Approved" status
+        'approved'; 
     print('isPending: $isPending');
     print('isApproved: $isApproved');
     print('isConfirmed: $isConfirmed');
@@ -1073,7 +1064,7 @@ class _EditAppointmentDialogState extends State<_EditAppointmentDialog> {
                                 backgroundColor: Colors.grey[200],
                                 onSelected: isConfirmed
                                     ? null
-                                    : null, // Make chips read-only for confirmed appointments
+                                    : null, 
                               );
                             })
                             .toList(),
@@ -1127,7 +1118,6 @@ class _EditAppointmentDialogState extends State<_EditAppointmentDialog> {
           onPressed: () => Navigator.of(context).pop(),
           child: const Text('Close'),
         ),
-        // Show action buttons based on status
         if (isPending) ...[
           ElevatedButton(
             style: ElevatedButton.styleFrom(
@@ -1290,7 +1280,6 @@ class _EditAppointmentDialogState extends State<_EditAppointmentDialog> {
                 : const Text('Approve'),
           ),
         ],
-        // Cancel Appointment Button (available for all statuses except already cancelled)
         if (widget.appointment.status.toLowerCase() != 'canceled' &&
             widget.appointment.status.toLowerCase() != 'cancelled') ...[
           ElevatedButton(

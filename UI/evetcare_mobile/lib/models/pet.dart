@@ -41,7 +41,7 @@ class Pet {
       'age': age,
       'weight': weight,
       'photo':
-          photo ?? '', // Always include photo field, use empty string if null
+          photo ?? '', 
     };
 
     print('=== PET TOJSON DEBUG ===');

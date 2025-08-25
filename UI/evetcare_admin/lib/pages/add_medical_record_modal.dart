@@ -9,7 +9,7 @@ import 'package:intl/intl.dart';
 class AddMedicalRecordModal extends StatefulWidget {
   final Patient patient;
   final Appointment appointment;
-  final MedicalRecord? existingRecord; // For editing existing records
+  final MedicalRecord? existingRecord;
 
   const AddMedicalRecordModal({
     super.key,
@@ -57,11 +57,9 @@ class _AddMedicalRecordModalState extends State<AddMedicalRecordModal>
   void _populateFields() {
     final record = widget.existingRecord!;
 
-    // Parse the notes to extract different sections
     final notes = record.notes ?? '';
     final analysis = record.analysisProvided ?? '';
 
-    // Extract vaccination, diagnosis, treatment from notes
     final lines = notes.split('\n');
     String vaccination = '';
     String diagnosis = '';
@@ -119,7 +117,6 @@ class _AddMedicalRecordModalState extends State<AddMedicalRecordModal>
         _isLoadingLabTests = false;
       });
       print('Failed to load lab tests: $e');
-      // Show error to user
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -146,7 +143,6 @@ class _AddMedicalRecordModalState extends State<AddMedicalRecordModal>
     try {
       final medicalRecordProvider = MedicalRecordProvider();
 
-      // Get the medicalRecordId from the appointment
       if (widget.appointment.medicalRecordId == null ||
           widget.appointment.medicalRecordId == 0) {
         throw Exception(
@@ -157,10 +153,8 @@ class _AddMedicalRecordModalState extends State<AddMedicalRecordModal>
       final medicalRecordId = widget.appointment.medicalRecordId!;
       print('✅ Using medical record ID from appointment: $medicalRecordId');
 
-      // Now call each API separately for each field that has data
       final List<String> calledApis = [];
 
-      // Call Treatment API if treatment is provided
       if (_treatmentController.text.trim().isNotEmpty) {
         try {
           print('Calling Treatment API...');
@@ -175,7 +169,6 @@ class _AddMedicalRecordModalState extends State<AddMedicalRecordModal>
         }
       }
 
-      // Call Diagnosis API if diagnosis is provided
       if (_diagnosisController.text.trim().isNotEmpty) {
         try {
           print('Calling Diagnosis API...');
@@ -190,7 +183,6 @@ class _AddMedicalRecordModalState extends State<AddMedicalRecordModal>
         }
       }
 
-      // Call Vaccination API if vaccination data is provided
       print('=== VACCINATION CHECK ===');
       print('Vaccination text: "${_vaccinationController.text.trim()}"');
       print('Date given: $_vaccinationDateGiven');
@@ -212,14 +204,12 @@ class _AddMedicalRecordModalState extends State<AddMedicalRecordModal>
           print('✅ Vaccination API called successfully');
         } catch (e) {
           print('❌ Failed to call Vaccination API: $e');
-          // Re-throw the error so it shows in the UI
           throw Exception('Vaccination API failed: $e');
         }
       } else {
         print('❌ Vaccination fields not complete, skipping API call');
       }
 
-      // Call Lab Result API if lab test data is provided
       if (_selectedLabTest != null &&
           _selectedLabTest!.labTestId != null &&
           _labResultValueController.text.trim().isNotEmpty) {
@@ -249,7 +239,7 @@ class _AddMedicalRecordModalState extends State<AddMedicalRecordModal>
             backgroundColor: Colors.green,
           ),
         );
-        Navigator.of(context).pop(true); // Return true to indicate success
+        Navigator.of(context).pop(true); 
       }
     } catch (e) {
       if (mounted) {
@@ -285,7 +275,6 @@ class _AddMedicalRecordModalState extends State<AddMedicalRecordModal>
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Header section (fixed at top)
               Row(
                 children: [
                   Icon(
@@ -339,7 +328,6 @@ class _AddMedicalRecordModalState extends State<AddMedicalRecordModal>
 
               const SizedBox(height: 16),
 
-              // Tab Bar
               Container(
                 decoration: BoxDecoration(
                   color: Colors.grey[100],
@@ -371,12 +359,10 @@ class _AddMedicalRecordModalState extends State<AddMedicalRecordModal>
 
               const SizedBox(height: 16),
 
-              // Tab Content
               Expanded(
                 child: TabBarView(
                   controller: _tabController!,
                   children: [
-                    // Vaccination Tab
                     SingleChildScrollView(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -391,7 +377,6 @@ class _AddMedicalRecordModalState extends State<AddMedicalRecordModal>
                           ),
                           const SizedBox(height: 16),
 
-                          // Vaccination Name Field
                           TextFormField(
                             controller: _vaccinationController,
                             decoration: const InputDecoration(
@@ -405,7 +390,6 @@ class _AddMedicalRecordModalState extends State<AddMedicalRecordModal>
 
                           const SizedBox(height: 16),
 
-                          // Date Given Field
                           InkWell(
                             onTap: () async {
                               final date = await showDatePicker(
@@ -418,7 +402,6 @@ class _AddMedicalRecordModalState extends State<AddMedicalRecordModal>
                               if (date != null) {
                                 setState(() {
                                   _vaccinationDateGiven = date;
-                                  // Reset next due date if it's now before the new date given
                                   if (_vaccinationNextDue != null &&
                                       _vaccinationNextDue!.isBefore(date)) {
                                     _vaccinationNextDue = null;
@@ -459,10 +442,8 @@ class _AddMedicalRecordModalState extends State<AddMedicalRecordModal>
 
                           const SizedBox(height: 16),
 
-                          // Next Due Field
                           InkWell(
                             onTap: () async {
-                              // Set minimum date to be the date given (if selected) or today
                               final minDate =
                                   _vaccinationDateGiven ?? DateTime.now();
 
@@ -527,7 +508,6 @@ class _AddMedicalRecordModalState extends State<AddMedicalRecordModal>
                           ),
                           const SizedBox(height: 16),
 
-                          // Diagnosis Field
                           TextFormField(
                             controller: _diagnosisController,
                             decoration: const InputDecoration(
@@ -559,7 +539,6 @@ class _AddMedicalRecordModalState extends State<AddMedicalRecordModal>
                           ),
                           const SizedBox(height: 16),
 
-                          // Treatment Field
                           TextFormField(
                             controller: _treatmentController,
                             decoration: const InputDecoration(
@@ -589,7 +568,6 @@ class _AddMedicalRecordModalState extends State<AddMedicalRecordModal>
                           ),
                           const SizedBox(height: 16),
 
-                          // Lab Test Dropdown
                           Container(
                             padding: const EdgeInsets.symmetric(
                               horizontal: 16,
@@ -652,7 +630,6 @@ class _AddMedicalRecordModalState extends State<AddMedicalRecordModal>
 
                           const SizedBox(height: 16),
 
-                          // Lab Result Value Field
                           TextFormField(
                             controller: _labResultValueController,
                             decoration: const InputDecoration(
@@ -672,7 +649,6 @@ class _AddMedicalRecordModalState extends State<AddMedicalRecordModal>
 
               const SizedBox(height: 16),
 
-              // Action Buttons (fixed at bottom)
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [

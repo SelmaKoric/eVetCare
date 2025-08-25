@@ -2,12 +2,10 @@ import '../models/medical_record.dart';
 import '../providers/api_provider.dart';
 
 class MedicalRecordService {
-  // Get all pets for the current user
   static Future<List<Map<String, dynamic>>> getPets() async {
     return await ApiProvider.getPets();
   }
 
-  // Get medical records for a specific pet
   static Future<List<MedicalRecord>> getMedicalRecords(int petId) async {
     print('MedicalRecordService: Getting medical records for pet ID: $petId');
 

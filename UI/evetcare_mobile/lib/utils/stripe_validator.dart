@@ -1,16 +1,13 @@
 import '../core/stripe_config.dart';
 
 class StripeValidator {
-  /// Validates the Stripe publishable key format
   static bool isValidPublishableKey(String key) {
     if (key.isEmpty) return false;
 
-    // Check if it starts with the correct prefix
     if (!key.startsWith('pk_test_') && !key.startsWith('pk_live_')) {
       return false;
     }
 
-    // Check if it has the correct length (publishable keys are typically 107 characters)
     if (key.length < 100 || key.length > 120) {
       return false;
     }
@@ -37,12 +34,10 @@ class StripeValidator {
     return 'Stripe configuration appears valid.';
   }
 
-  /// Checks if the current configuration is for test mode
   static bool isTestMode() {
     return StripeConfig.publishableKey.startsWith('pk_test_');
   }
 
-  /// Gets a user-friendly description of the current mode
   static String getModeDescription() {
     return isTestMode() ? 'Test Mode' : 'Live Mode';
   }

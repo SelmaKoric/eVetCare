@@ -1,4 +1,5 @@
 ﻿using eVetCare.Model.SearchObjects;
+using eVetCare.Model.Requests;
 using eVetCare.Services.Database;
 using eVetCare.Services.Interfaces;
 using MapsterMapper;
@@ -6,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace eVetCare.Services
 {
-	public class MedicalRecordService : BaseService<Model.MedicalRecord, MedicalRecordSearchObject, Database.MedicalRecord>, IMedicalRecordService
+	public class MedicalRecordService : BaseCRUDService<Model.MedicalRecord, MedicalRecordSearchObject, Database.MedicalRecord, MedicalRecordUpsertRequest, MedicalRecordUpsertRequest>, IMedicalRecordService
 	{
         public MedicalRecordService(EVetCareContext context, IMapper mapper) : base(context, mapper)
         {
@@ -38,16 +39,6 @@ namespace eVetCare.Services
             {
                 queryFilter = queryFilter.Where(x => x.Date.Equals(search.Date));
             }
-
-            //if (!string.IsNullOrWhiteSpace(search.DiagnosisKeyword))
-            //{
-            //    queryFilter = queryFilter.Where(x => x.Diagnoses.Any(d => d.Description.Contains(search.DiagnosisKeyword)));
-            //}
-
-            //if (!string.IsNullOrWhiteSpace(search.TreatmentKeyword))
-            //{
-            //    queryFilter = queryFilter.Where(x => x.Treatments.Any(d => d.TreatmentDescription.Contains(search.DiagnosisKeyword)));
-            //}
 
             if (search.IncludeDiagnoses == true)
             {

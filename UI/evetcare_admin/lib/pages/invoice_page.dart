@@ -21,9 +21,9 @@ class InvoicePage extends StatefulWidget {
 class _InvoicePageState extends State<InvoicePage> {
   late InvoiceProvider _invoiceProvider;
   late Future<SearchResult<Invoice>> _futureInvoices;
-  Map<int, String> _serviceNames = {}; // serviceId -> name
+  Map<int, String> _serviceNames = {}; 
   bool _loadingServices = false;
-  Map<int, List<Payment>> _payments = {}; // invoiceId -> List<Payment>
+  Map<int, List<Payment>> _payments = {};
   bool _loadingPayments = false;
 
   @override
@@ -36,7 +36,6 @@ class _InvoicePageState extends State<InvoicePage> {
   void fetchInvoices() {
     setState(() {
       _futureInvoices = _invoiceProvider.get();
-      // Clear cached data to force refresh
       _serviceNames.clear();
       _payments.clear();
       _loadingServices = false;
@@ -54,7 +53,7 @@ class _InvoicePageState extends State<InvoicePage> {
         .toSet();
     final Map<int, String> names = {};
     for (final id in serviceIds) {
-      if (!mounted) return; // Check if still mounted before each iteration
+      if (!mounted) return; 
       try {
         final headers = {
           'Content-Type': 'application/json',
@@ -96,7 +95,7 @@ class _InvoicePageState extends State<InvoicePage> {
     });
     final Map<int, List<Payment>> paymentsMap = {};
     for (final invoice in invoices) {
-      if (!mounted) return; // Check if still mounted before each iteration
+      if (!mounted) return; 
       try {
         final headers = {
           'Content-Type': 'application/json',
@@ -122,7 +121,7 @@ class _InvoicePageState extends State<InvoicePage> {
               : data;
           print('Payment result list: $result');
 
-          // Filter payments that actually belong to this invoice
+         
           final List<Payment> invoicePayments = [];
           for (final paymentJson in result) {
             final payment = Payment.fromJson(
@@ -263,14 +262,12 @@ class _InvoicePageState extends State<InvoicePage> {
                 return const Center(child: Text('No invoices found.'));
               }
               final invoices = snapshot.data!.result;
-              // Fetch service names if not already loaded
               if (_serviceNames.isEmpty && !_loadingServices) {
                 WidgetsBinding.instance.addPostFrameCallback((_) {
                   if (mounted) _fetchServiceNamesForInvoices(invoices);
                 });
                 return const Center(child: CircularProgressIndicator());
               }
-              // Fetch payments if not already loaded
               if (_payments.isEmpty && !_loadingPayments) {
                 WidgetsBinding.instance.addPostFrameCallback((_) {
                   if (mounted) _fetchPaymentsForInvoices(invoices);
@@ -407,7 +404,7 @@ class _InvoicePageState extends State<InvoicePage> {
   }
 
   Widget _buildPagination() {
-    return Container(); // Invoices page doesn't need pagination for now
+    return Container();
   }
 }
 
@@ -441,12 +438,10 @@ class _AddInvoiceDialogState extends State<_AddInvoiceDialog> {
       _loading = true;
     });
     try {
-      // Fetch appointments - get all appointments
       final appointmentProvider = AppointmentProvider();
       await appointmentProvider.fetchAllAppointments();
       _appointments = appointmentProvider.appointments;
 
-      // Fetch services
       final serviceProvider = ServiceProvider();
       final servicesResult = await serviceProvider.get();
       _services = servicesResult.result;
@@ -526,9 +521,7 @@ class _AddInvoiceDialogState extends State<_AddInvoiceDialog> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Invoice created successfully!')),
         );
-        // Refresh the invoice list
         widget.onInvoiceCreated();
-        // Show refresh indicator
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Refreshing invoice list...'),
@@ -573,7 +566,6 @@ class _AddInvoiceDialogState extends State<_AddInvoiceDialog> {
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Appointment Selection
                       const Text(
                         'Select Appointment',
                         style: TextStyle(
@@ -602,7 +594,6 @@ class _AddInvoiceDialogState extends State<_AddInvoiceDialog> {
                         onChanged: (appointment) {
                           setState(() {
                             _selectedAppointment = appointment;
-                            // Auto-select services from the appointment
                             if (appointment != null) {
                               _selectedServiceIds.clear();
                               for (final serviceName
@@ -840,7 +831,6 @@ class _PaymentModalState extends State<_PaymentModal> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Invoice Summary
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
@@ -965,7 +955,7 @@ class _InvoiceDetailsModalState extends State<_InvoiceDetailsModal> {
   Future<void> _fetchServiceNames() async {
     final Map<int, String> names = {};
     for (final item in widget.invoice.invoiceItems) {
-      if (!mounted) return; // Check if still mounted before each iteration
+      if (!mounted) return; 
       try {
         final headers = {
           'Content-Type': 'application/json',
@@ -1016,7 +1006,6 @@ class _InvoiceDetailsModalState extends State<_InvoiceDetailsModal> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Invoice Header
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
@@ -1059,7 +1048,6 @@ class _InvoiceDetailsModalState extends State<_InvoiceDetailsModal> {
               ),
               const SizedBox(height: 16),
 
-              // Invoice Items
               const Text(
                 'Services',
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),

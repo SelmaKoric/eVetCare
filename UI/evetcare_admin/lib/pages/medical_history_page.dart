@@ -43,7 +43,6 @@ class _MedicalHistoryPageState extends State<MedicalHistoryPage>
     try {
       final medicalRecordProvider = MedicalRecordProvider();
 
-      // Fetch both medical records and lab tests in parallel
       final results = await Future.wait([
         medicalRecordProvider.getMedicalRecordsByPetId(widget.patient.petId!),
         medicalRecordProvider.getLabTests(),

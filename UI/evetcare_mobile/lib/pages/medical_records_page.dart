@@ -57,14 +57,12 @@ class _MedicalRecordsPageState extends State<MedicalRecordsPage>
       });
       print('MedicalRecordsPage: setState completed');
 
-      // Load medical records after setState to avoid nested setState calls
       if (_pets.isNotEmpty && _selectedPetId != null) {
         print(
           'MedicalRecordsPage: Pets found and selected, triggering medical records load',
         );
         _loadMedicalRecords();
       } else {
-        // If no pets or no selected pet, stop loading
         print('MedicalRecordsPage: No pets found or no pet selected');
         print('MedicalRecordsPage: _pets.isEmpty: ${_pets.isEmpty}');
         print('MedicalRecordsPage: _selectedPetId: $_selectedPetId');
@@ -90,7 +88,6 @@ class _MedicalRecordsPageState extends State<MedicalRecordsPage>
       return;
     }
 
-    // Prevent multiple simultaneous calls
     if (_isLoading) {
       print('Medical records already loading, skipping...');
       return;
@@ -108,7 +105,6 @@ class _MedicalRecordsPageState extends State<MedicalRecordsPage>
     try {
       print('Calling MedicalRecordService.getMedicalRecords...');
 
-      // Add timeout to prevent infinite loading
       final records =
           await MedicalRecordService.getMedicalRecords(_selectedPetId!).timeout(
             const Duration(seconds: 30),
@@ -180,7 +176,6 @@ class _MedicalRecordsPageState extends State<MedicalRecordsPage>
       ),
       body: Column(
         children: [
-          // Pet Selection Dropdown
           if (_pets.isNotEmpty) ...[
             Container(
               padding: const EdgeInsets.all(16),

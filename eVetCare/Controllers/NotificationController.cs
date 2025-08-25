@@ -1,5 +1,6 @@
 ﻿using System;
 using eVetCare.Model;
+using eVetCare.Model.Requests;
 using eVetCare.Model.SearchObjects;
 using eVetCare.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
@@ -9,7 +10,7 @@ namespace eVetCare.API.Controllers
 {
     [ApiController]
     [Route("[controller]")]
-    public class NotificationController : BaseController<Notification, NotificationSearchObject>
+    public class NotificationController : BaseCRUDController<Notification, NotificationSearchObject, NotificationUpsertRequest, NotificationUpsertRequest>
 	{
         public NotificationController(INotificationService service) : base(service)
         {

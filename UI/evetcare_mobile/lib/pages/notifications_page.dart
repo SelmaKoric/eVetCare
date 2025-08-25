@@ -43,7 +43,6 @@ class _NotificationsPageState extends State<NotificationsPage> {
         _errorMessage = e.toString();
       });
 
-      // Don't show SnackBar for 404 errors, let the UI handle it
       if (!e.toString().contains('404')) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -79,12 +78,10 @@ class _NotificationsPageState extends State<NotificationsPage> {
         ),
         centerTitle: true,
         actions: [
-          // Refresh button
           IconButton(
             icon: Icon(Icons.refresh, color: Colors.grey[600]),
             onPressed: _loadNotifications,
           ),
-          // Mark all as read button
           if (_notifications.any((n) => !n.isRead))
             IconButton(
               onPressed: _markAllAsRead,
@@ -94,7 +91,6 @@ class _NotificationsPageState extends State<NotificationsPage> {
               ),
               tooltip: 'Mark all as read',
             ),
-          // Filter button
           PopupMenuButton<String>(
             onSelected: (String value) {
               setState(() {
@@ -129,7 +125,6 @@ class _NotificationsPageState extends State<NotificationsPage> {
       ),
       body: Column(
         children: [
-          // Filter indicator
           if (_selectedFilter != 'All')
             Container(
               width: double.infinity,
@@ -162,7 +157,6 @@ class _NotificationsPageState extends State<NotificationsPage> {
               ),
             ),
 
-          // Notifications list
           Expanded(child: _buildContent(filteredNotifications)),
         ],
       ),
@@ -276,7 +270,6 @@ class _NotificationsPageState extends State<NotificationsPage> {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Notification icon
               Container(
                 width: 40,
                 height: 40,
@@ -294,12 +287,10 @@ class _NotificationsPageState extends State<NotificationsPage> {
               ),
               const SizedBox(width: 12),
 
-              // Notification content
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Title and timestamp
                     Row(
                       children: [
                         Expanded(
@@ -329,7 +320,6 @@ class _NotificationsPageState extends State<NotificationsPage> {
                     ),
                     const SizedBox(height: 4),
 
-                    // Message
                     Text(
                       notification.message,
                       style: TextStyle(
@@ -339,7 +329,6 @@ class _NotificationsPageState extends State<NotificationsPage> {
                       ),
                     ),
 
-                    // Action buttons
                     if (!notification.isRead) ...[
                       const SizedBox(height: 12),
                       Row(
@@ -458,7 +447,6 @@ class _NotificationsPageState extends State<NotificationsPage> {
 
   Future<void> _markAllAsRead() async {
     try {
-      // Get all unread notifications
       final unreadNotifications = _notifications
           .where((n) => !n.isRead)
           .toList();
@@ -474,13 +462,11 @@ class _NotificationsPageState extends State<NotificationsPage> {
         return;
       }
 
-      // Mark each unread notification as read via API
       final unreadIds = unreadNotifications
           .map((n) => n.notificationId)
           .toList();
       await NotificationService.markMultipleAsRead(unreadIds);
 
-      // Update UI state
       setState(() {
         for (int i = 0; i < _notifications.length; i++) {
           if (!_notifications[i].isRead) {
@@ -518,7 +504,6 @@ class _NotificationsPageState extends State<NotificationsPage> {
   }
 
   Future<void> _cancelAppointment(NotificationItem notification) async {
-    // Show confirmation dialog
     final shouldCancel = await showDialog<bool>(
       context: context,
       builder: (BuildContext context) {
@@ -550,7 +535,6 @@ class _NotificationsPageState extends State<NotificationsPage> {
     }
 
     try {
-      // Extract appointment ID from notification message
       final appointmentId = NotificationService.extractAppointmentIdFromMessage(
         notification.message,
       );
@@ -569,7 +553,6 @@ class _NotificationsPageState extends State<NotificationsPage> {
 
       await NotificationService.cancelAppointment(appointmentId);
 
-      // Mark the notification as read after successful cancellation
       await _markAsRead(notification);
 
       ScaffoldMessenger.of(context).showSnackBar(

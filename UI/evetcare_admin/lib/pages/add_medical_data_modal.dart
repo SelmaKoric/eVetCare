@@ -26,14 +26,11 @@ class _AddMedicalDataModalState extends State<AddMedicalDataModal>
   late TabController _tabController;
   final _formKey = GlobalKey<FormState>();
 
-  // Treatment fields
   final _treatmentController = TextEditingController();
 
-  // Lab Result fields
   final _labTestIdController = TextEditingController();
   final _resultValueController = TextEditingController();
 
-  // Diagnosis fields
   final _diagnosisController = TextEditingController();
 
   bool _isLoading = false;
@@ -253,7 +250,6 @@ class _AddMedicalDataModalState extends State<AddMedicalDataModal>
 
             const SizedBox(height: 16),
 
-            // Patient and Appointment Info
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
@@ -284,7 +280,6 @@ class _AddMedicalDataModalState extends State<AddMedicalDataModal>
 
             const SizedBox(height: 20),
 
-            // Tab Bar
             Container(
               decoration: BoxDecoration(
                 color: Colors.grey[200],
@@ -308,7 +303,6 @@ class _AddMedicalDataModalState extends State<AddMedicalDataModal>
 
             const SizedBox(height: 20),
 
-            // Tab Content
             Expanded(
               child: TabBarView(
                 controller: _tabController,

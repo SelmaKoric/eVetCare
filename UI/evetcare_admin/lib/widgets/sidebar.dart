@@ -49,7 +49,6 @@ class _SidebarState extends State<Sidebar> {
                     setState(() {
                       isExpanded = !isExpanded;
                     });
-                    // Notify parent of state change
                     widget.onExpandedChanged?.call(isExpanded);
                   },
                 ),

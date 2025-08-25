@@ -5,7 +5,7 @@ using eVetCare.Model.SearchObjects;
 
 namespace eVetCare.Services.Interfaces
 {
-    public interface IMedicalRecordService : IService<MedicalRecord, MedicalRecordSearchObject>
+    public interface IMedicalRecordService : ICRUDService<MedicalRecord, MedicalRecordSearchObject, MedicalRecordUpsertRequest, MedicalRecordUpsertRequest>
     {
 
     }

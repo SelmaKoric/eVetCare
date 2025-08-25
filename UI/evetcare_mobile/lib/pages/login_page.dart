@@ -43,7 +43,6 @@ class _LoginPageState extends State<LoginPage> {
       Authorization.userId = result?.userId;
 
       if (result != null) {
-        // Fetch user info after successful login
         try {
           final userInfo = await ApiService.getUserInfo(
             result.userId,
@@ -51,7 +50,6 @@ class _LoginPageState extends State<LoginPage> {
           );
           Authorization.user = userInfo;
         } catch (e) {
-          // Log the error but don't prevent login
           print('Failed to fetch user info: $e');
         }
 
@@ -84,7 +82,6 @@ class _LoginPageState extends State<LoginPage> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // Logo or app icon placeholder
                   Icon(
                     Icons.pets,
                     size: 80,

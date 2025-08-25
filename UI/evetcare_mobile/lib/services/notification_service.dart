@@ -34,8 +34,6 @@ class NotificationService {
 
   // Extract appointment ID from notification message
   static int? extractAppointmentIdFromMessage(String message) {
-    // Try to extract appointment ID from the message
-    // This is a simple regex pattern - adjust based on your actual message format
     final regex = RegExp(r'appointment\s+#?(\d+)', caseSensitive: false);
     final match = regex.firstMatch(message);
 
@@ -43,7 +41,6 @@ class NotificationService {
       return int.tryParse(match.group(1) ?? '');
     }
 
-    // If no pattern matches, try to find any number in the message
     final numberRegex = RegExp(r'\b(\d+)\b');
     final numberMatch = numberRegex.firstMatch(message);
 

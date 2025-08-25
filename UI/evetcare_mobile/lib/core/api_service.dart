@@ -127,11 +127,9 @@ class ApiService {
     print('============================');
 
     if (imageFile != null) {
-      // Use multipart form data for file upload
       print('Using _addPetWithImage method');
       return await _addPetWithImage(pet, imageFile);
     } else {
-      // Try multipart first, then fallback to JSON if it fails
       print('No image file, trying multipart first');
       try {
         return await _addPetWithoutImage(pet);
@@ -144,18 +142,15 @@ class ApiService {
 
   static Future<bool> _addPetWithImage(Pet pet, File imageFile) async {
     try {
-      // Create multipart request
       final request = http.MultipartRequest(
         'POST',
         Uri.parse(patientsEndpoint),
       );
 
-      // Add authorization header
       if (Authorization.token != null) {
         request.headers["Authorization"] = "Bearer ${Authorization.token}";
       }
 
-      // Add text fields
       request.fields['ownerId'] = pet.ownerId.toString();
       request.fields['ownerFirstName'] = pet.ownerFirstName;
       request.fields['ownerLastName'] = pet.ownerLastName;
@@ -168,7 +163,6 @@ class ApiService {
       request.fields['age'] = pet.age.toString();
       request.fields['weight'] = pet.weight.toString();
 
-      // Add image file
       final stream = http.ByteStream(imageFile.openRead());
       final length = await imageFile.length();
       final multipartFile = http.MultipartFile(
@@ -364,7 +358,6 @@ class ApiService {
       print('Using _updatePetWithImage method');
       return await _updatePetWithImage(petId, pet, imageFile);
     } else {
-      // Always use multipart form data for updates
       print('No image file, using multipart form data for update');
       return await _updatePetWithoutImage(petId, pet);
     }
@@ -530,7 +523,6 @@ class ApiService {
 
     final body = jsonEncode(pet.toJson());
 
-    // Enhanced debug logging
     print('=== UPDATE PET JSON REQUEST DEBUG ===');
     print('URL: $patientsEndpoint/$petId');
     print('Method: PUT');
@@ -559,7 +551,6 @@ class ApiService {
       body: body,
     );
 
-    // Enhanced response logging
     print('=== UPDATE PET JSON RESPONSE DEBUG ===');
     print('Status Code: ${response.statusCode}');
     print('Response Headers:');

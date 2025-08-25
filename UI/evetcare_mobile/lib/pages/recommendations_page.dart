@@ -63,7 +63,6 @@ class _RecommendationsPageState extends State<RecommendationsPage> {
     try {
       print('Generating recommendations for pet ID: $petId');
 
-      // Call the POST API to generate recommendations
       final generateResponse = await http.post(
         Uri.parse('${Config.apiUrl}/api/Recommendation/recommendations/$petId'),
         headers: {
@@ -76,10 +75,8 @@ class _RecommendationsPageState extends State<RecommendationsPage> {
       print('Generate Response Body: ${generateResponse.body}');
 
       if (generateResponse.statusCode == 200) {
-        // Wait a moment for the backend to process
         await Future.delayed(const Duration(seconds: 2));
 
-        // Call the GET API to retrieve recommendations
         final getResponse = await http.get(
           Uri.parse(
             '${Config.apiUrl}/api/Recommendation/recommendations/$petId',
@@ -163,15 +160,12 @@ class _RecommendationsPageState extends State<RecommendationsPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header Section
             _buildHeaderSection(),
             const SizedBox(height: 24),
 
-            // Pet Selection Section
             _buildPetSelectionSection(),
             const SizedBox(height: 24),
 
-            // Recommendations Section
             if (_selectedPet != null) _buildRecommendationsSection(),
           ],
         ),

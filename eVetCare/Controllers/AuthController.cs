@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace eVetCare.API.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")]
+    [Route("[controller]")]
     public class AuthController : ControllerBase
     {
         private readonly IAuthService _authService;

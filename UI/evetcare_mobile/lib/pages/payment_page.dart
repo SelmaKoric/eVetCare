@@ -37,7 +37,6 @@ class _PaymentPageState extends State<PaymentPage> {
   bool _cardFormComplete = false;
   bool _stripeInitialized = false;
 
-  // Controllers for text fields
   late TextEditingController _nameController;
   late TextEditingController _zipController;
 
@@ -55,7 +54,6 @@ class _PaymentPageState extends State<PaymentPage> {
 
   Future<void> _initializeStripe() async {
     try {
-      // Ensure Stripe is properly initialized
       await Stripe.instance.applySettings();
       setState(() {
         _stripeInitialized = true;
@@ -111,19 +109,15 @@ class _PaymentPageState extends State<PaymentPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Appointment Summary
               _buildAppointmentSummary(),
               const SizedBox(height: 24),
 
-              // Payment Form
               _buildPaymentForm(),
               const SizedBox(height: 24),
 
-              // Payment Button - Now below the form
               _buildPaymentButton(),
               const SizedBox(height: 16),
 
-              // Info text
               _buildInfoText(),
             ],
           ),
@@ -132,12 +126,10 @@ class _PaymentPageState extends State<PaymentPage> {
     );
   }
 
-  // Load saved payment details from shared preferences
   Future<void> _loadSavedPaymentDetails() async {
     try {
       final prefs = await SharedPreferences.getInstance();
 
-      // Populate controllers with saved data or test data
       _nameController.text = prefs.getString('saved_name') ?? 'John Doe';
       _zipController.text = prefs.getString('saved_zip') ?? '12345';
 
@@ -146,13 +138,11 @@ class _PaymentPageState extends State<PaymentPage> {
       print('ZIP: ${_zipController.text}');
     } catch (e) {
       print('Error loading saved payment details: $e');
-      // Set test data as fallback
       _nameController.text = 'John Doe';
       _zipController.text = '12345';
     }
   }
 
-  // Save payment details to shared preferences
   Future<void> _savePaymentDetailsToStorage() async {
     try {
       print('Saving payment details to storage...');
@@ -167,7 +157,6 @@ class _PaymentPageState extends State<PaymentPage> {
     }
   }
 
-  // Show payment success dialog
   void _showPaymentSuccessDialog() {
     showDialog(
       context: context,
@@ -213,11 +202,11 @@ class _PaymentPageState extends State<PaymentPage> {
           actions: [
             TextButton(
               onPressed: () {
-                Navigator.of(context).pop(); // Close dialog
+                Navigator.of(context).pop(); 
                 Navigator.popUntil(
                   context,
                   (route) => route.isFirst,
-                ); // Go to home
+                );
               },
               child: const Text(
                 'OK',
@@ -399,7 +388,6 @@ class _PaymentPageState extends State<PaymentPage> {
               ),
               const SizedBox(height: 16),
 
-              // Name on Card
               TextFormField(
                 controller: _nameController,
                 decoration: InputDecoration(
@@ -413,7 +401,6 @@ class _PaymentPageState extends State<PaymentPage> {
               ),
               const SizedBox(height: 12),
 
-              // ZIP Code
               TextFormField(
                 controller: _zipController,
                 decoration: InputDecoration(
@@ -528,7 +515,6 @@ class _PaymentPageState extends State<PaymentPage> {
     });
 
     try {
-      // Validate Stripe configuration first
       if (!StripeConfig.publishableKey.startsWith('pk_test_') &&
           !StripeConfig.publishableKey.startsWith('pk_live_')) {
         throw Exception(
@@ -542,11 +528,9 @@ class _PaymentPageState extends State<PaymentPage> {
       print('Invoice Data: ${widget.invoiceData}');
       print('Stripe Key: ${StripeConfig.publishableKey.substring(0, 10)}...');
 
-      // Get the invoice ID from the invoice data
       int? invoiceId;
 
       if (widget.invoiceData != null) {
-        // Try to extract invoice ID from the invoice data
         if (widget.invoiceData!.containsKey('id')) {
           invoiceId = widget.invoiceData!['id'] as int;
         } else if (widget.invoiceData!.containsKey('invoiceId')) {
@@ -619,7 +603,6 @@ class _PaymentPageState extends State<PaymentPage> {
 
       print('Processing payment with Stripe card form...');
 
-      // Create payment method using the card form data
       final paymentMethod = await Stripe.instance.createPaymentMethod(
         params: PaymentMethodParams.card(
           paymentMethodData: PaymentMethodData(
@@ -640,7 +623,6 @@ class _PaymentPageState extends State<PaymentPage> {
 
       print('Payment method created: ${paymentMethod.id}');
 
-      // Confirm payment with the client secret
       final paymentResult = await Stripe.instance.confirmPayment(
         paymentIntentClientSecret: clientSecret,
         data: PaymentMethodParams.card(
@@ -663,11 +645,9 @@ class _PaymentPageState extends State<PaymentPage> {
       print('Payment confirmed successfully');
       print('Payment Result: $paymentResult');
 
-      // Extract payment details from the result
       final paymentIntent = paymentResult;
       final paymentMethodId = paymentMethod.id;
 
-      // Log all the important IDs and details
       print('=== PAYMENT DETAILS ===');
       print('Payment Intent ID: ${paymentIntent?.id}');
       print('Payment Method ID: $paymentMethodId');
@@ -676,11 +656,10 @@ class _PaymentPageState extends State<PaymentPage> {
       print('Currency: ${paymentIntent?.currency}');
       print('Created: ${paymentIntent?.created}');
 
-      // Prepare payment data for API call
       final paymentData = {
         'invoiceId': invoiceId,
         'amount': widget.amount,
-        'methodId': 1, // Default method ID for Stripe
+        'methodId': 1, 
         'paymentDate': DateTime.now().toIso8601String(),
         'paymentIntentId': paymentIntent?.id ?? '',
         'paymentMethodId': paymentMethodId,
@@ -699,7 +678,6 @@ class _PaymentPageState extends State<PaymentPage> {
 
       print('Payment Data to Send: $paymentData');
 
-      // Call your API to save payment
       final savePaymentResponse = await http.post(
         Uri.parse('${StripeConfig.apiUrl}/Payment'),
         headers: {
@@ -716,15 +694,12 @@ class _PaymentPageState extends State<PaymentPage> {
           savePaymentResponse.statusCode == 201) {
         print('Payment saved to database successfully');
 
-        // If we reach here, payment was successful
         if (mounted) {
           print('Payment completed successfully!');
           print('Saving payment details...');
 
-          // Save payment details to local storage
           await _savePaymentDetailsToStorage();
 
-          // Show success popup
           _showPaymentSuccessDialog();
         }
       } else {

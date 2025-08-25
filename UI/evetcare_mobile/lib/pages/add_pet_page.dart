@@ -229,7 +229,6 @@ class _AddPetPageState extends State<AddPetPage> {
               _buildPhotoUpload(),
               const SizedBox(height: 32),
 
-              // Submit Button
               SizedBox(
                 width: double.infinity,
                 height: 50,
@@ -419,7 +418,6 @@ class _AddPetPageState extends State<AddPetPage> {
           child: Column(
             children: [
               if (_selectedImageFile != null) ...[
-                // Show selected image preview
                 Container(
                   width: 100,
                   height: 100,
@@ -561,7 +559,6 @@ class _AddPetPageState extends State<AddPetPage> {
             ),
           );
 
-          // Navigate back to home page
           Navigator.pop(context);
         }
       } catch (e) {

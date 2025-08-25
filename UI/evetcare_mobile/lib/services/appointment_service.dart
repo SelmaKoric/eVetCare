@@ -4,7 +4,6 @@ import '../providers/api_provider.dart';
 import '../utils/authorization.dart';
 
 class AppointmentService {
-  // Get all appointments for the current user
   static Future<List<Appointment>> getAppointments() async {
     final response = await ApiProvider.get(
       '/Appointments?OwnerId=${Authorization.userId}',
@@ -24,14 +23,12 @@ class AppointmentService {
     }).toList();
   }
 
-  // Create a new appointment
   static Future<Map<String, dynamic>> createAppointment(
     Map<String, dynamic> appointmentData,
   ) async {
     return await ApiProvider.createAppointment(appointmentData);
   }
 
-  // Update an existing appointment
   static Future<Map<String, dynamic>> updateAppointment(
     int appointmentId,
     Map<String, dynamic> appointmentData,
@@ -336,7 +333,6 @@ class AppointmentService {
     String errorMessage = 'An error occurred';
     bool isOverlapError = false;
 
-    // Check if the error message contains overlap-related text
     if (error.toString().contains('overlaps with the requested time')) {
       errorMessage =
           'Time slot unavailable. There is already an appointment scheduled that overlaps with the requested time. Please select a different date or time.';

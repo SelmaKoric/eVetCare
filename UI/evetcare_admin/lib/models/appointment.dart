@@ -33,7 +33,6 @@ class Appointment {
           .whereType<ServiceName>()
           .toList();
     } else if (services is String && services.isNotEmpty) {
-      // Handle case where serviceNames is a string (backward compatibility)
       serviceNamesList = [ServiceName(name: services, description: '')];
     }
 
@@ -66,7 +65,6 @@ class Appointment {
     };
   }
 
-  // Helper method to get service names as a string (for backward compatibility)
   String get serviceNamesString {
     return serviceNames.map((s) => s.name).join(', ');
   }

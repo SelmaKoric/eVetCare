@@ -89,10 +89,8 @@ class MedicalRecordProvider {
     );
 
     if (response.statusCode == 200 || response.statusCode == 204) {
-      // For 204 (No Content), we need to return the existing record data
       if (response.statusCode == 204) {
         print('⚠️ Server returned 204 (No Content) for update');
-        // Return a MedicalRecord with the updated data since server doesn't return body
         return MedicalRecord(
           medicalRecordId: medicalRecordId,
           petId: petId,
@@ -100,7 +98,7 @@ class MedicalRecordProvider {
           date: DateTime.parse(date),
           notes: notes,
           analysisProvided: analysisProvided,
-          petName: null, // We don't have this from the update
+          petName: null, 
           diagnoses: [],
           treatments: [],
           labResults: [],
@@ -355,7 +353,6 @@ class MedicalRecordProvider {
       final Map<String, dynamic> responseData = jsonDecode(response.body);
       print('MedicalRecord API Response: $responseData');
 
-      // Extract the result array from the paginated response
       final List<dynamic> resultList = responseData['result'] ?? [];
       print('MedicalRecord result array: $resultList');
       print('MedicalRecord count: ${resultList.length}');
