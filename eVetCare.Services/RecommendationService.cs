@@ -24,7 +24,6 @@ public class RecommendationService : IRecommendationService
             .Select(p => p.OwnerId)
             .FirstOrDefault();
 
-        // 1. Load training data
         var trainingData = _context.InvoiceItems
             .Join(_context.Invoices, ii => ii.InvoiceId, i => i.InvoiceId, (ii, i) => new { i.AppointmentId, ii.ServiceId })
             .Join(_context.Appointments, x => x.AppointmentId, a => a.AppointmentId, (x, a) => new { a.Pet.OwnerId, x.ServiceId })
@@ -38,7 +37,6 @@ public class RecommendationService : IRecommendationService
 
         var dataView = _mlContext.Data.LoadFromEnumerable(trainingData);
 
-        // 2. Create pipeline
         var pipeline = _mlContext.Transforms.Conversion
             .MapValueToKey("OwnerIdEncoded", nameof(ServiceRating.OwnerId))
             .Append(_mlContext.Transforms.Conversion.MapValueToKey("ServiceIdEncoded", nameof(ServiceRating.ServiceId)))
@@ -51,10 +49,8 @@ public class RecommendationService : IRecommendationService
                 ApproximationRank = 100
             }));
 
-        // 3. Train the model
         var model = pipeline.Fit(dataView);
 
-        // 4. Make predictions
         var predictionEngine = _mlContext.Model.CreatePredictionEngine<ServiceRating, ServiceScore>(model);
 
         var allServiceIds = _context.Services.Select(s => s.ServiceId).ToList();
@@ -69,7 +65,6 @@ public class RecommendationService : IRecommendationService
             .Take(3)
             .ToList();
 
-        // 5. Save to DB
         var recommendedServices = _context.Services
             .Where(s => predictions.Select(p => p.ServiceId).Contains(s.ServiceId))
             .Select(s => s.Name)
