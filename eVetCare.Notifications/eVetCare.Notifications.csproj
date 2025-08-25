@@ -16,7 +16,5 @@
     <ProjectReference Include="..\eVetCare.Model\eVetCare.Model.csproj" />
    <ProjectReference Include="..\eVetCare.Services\eVetCare.Services.csproj" />
   </ItemGroup>
-  <ItemGroup>
-    <Reference Include="Microsoft.EntityFrameworkCore, Version=7.0.0.0, Culture=neutral, PublicKeyToken=adb9793829ddae60" />
-  </ItemGroup>
+
 </Project>

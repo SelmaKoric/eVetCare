@@ -16,6 +16,7 @@ using Microsoft.OpenApi.Models;
 using RabbitMQ.Client;
 using eVetCare.Services.Mapping;
 using eVetCare.API.Filters;
+using Microsoft.Extensions.DependencyInjection;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -113,6 +114,13 @@ builder.Services.AddScoped<IAnalyticsService, AnalyticsService>();
 StripeConfiguration.ApiKey = builder.Configuration["Stripe:SecretKey"];
 
 var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    var context = scope.ServiceProvider.GetRequiredService<EVetCareContext>();
+    context.Database.Migrate(); 
+    SeedData.SeedDatabase(context);
+}
 
 app.UseCors("AllowAll");
 app.UseStaticFiles();

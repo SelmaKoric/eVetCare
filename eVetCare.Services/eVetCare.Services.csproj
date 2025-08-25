@@ -33,6 +33,8 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
+    <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="9.0.8" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="9.0.8" />
     <PackageReference Include="Microsoft.ML.Recommender" Version="0.22.2" />
     <PackageReference Include="Stripe.net" Version="48.2.0" />
     <PackageReference Include="Microsoft.ML" Version="4.0.2" />

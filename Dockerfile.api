@@ -1,0 +1,27 @@
+FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
+WORKDIR /src
+
+COPY eVetCare.sln ./
+
+COPY eVetCare/ eVetCare/
+COPY eVetCare.Model/ eVetCare.Model/
+COPY eVetCare.Services/ eVetCare.Services/
+COPY eVetCare.Notifications/ eVetCare.Notifications/
+
+RUN dotnet restore eVetCare.sln
+
+RUN dotnet build eVetCare.sln -c Release --no-restore
+
+FROM build AS publish
+WORKDIR /src/eVetCare
+RUN mv /src/eVetCare.Notifications/appsettings.Development.json /src/eVetCare.Notifications/appsettings.Development.json.bak || true
+RUN dotnet publish eVetCare.API.csproj -c Release -o /app --no-restore
+
+FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS runtime
+WORKDIR /app
+COPY --from=publish /app .
+
+EXPOSE 80
+EXPOSE 443
+
+ENTRYPOINT ["dotnet", "eVetCare.API.dll"]

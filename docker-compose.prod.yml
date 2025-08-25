@@ -3,7 +3,7 @@ services:
     image: mcr.microsoft.com/mssql/server:2022-latest
     environment:
       - ACCEPT_EULA=Y
-      - SA_PASSWORD=YourStrong@Passw0rd
+      - SA_PASSWORD=${DB_PASSWORD:-YourStrong@Passw0rd}
       - MSSQL_PID=Express
     ports:
       - "1433:1433"
@@ -12,10 +12,11 @@ services:
     networks:
       - evetcare-network
     healthcheck:
-      test: ["CMD-SHELL", "/opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P YourStrong@Passw0rd -Q 'SELECT 1' || exit 1"]
+      test: ["CMD-SHELL", "/opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P ${DB_PASSWORD:-YourStrong@Passw0rd} -Q 'SELECT 1' || exit 1"]
       interval: 10s
       timeout: 3s
       retries: 10
+    restart: unless-stopped
 
   rabbitmq:
     image: rabbitmq:3-management
@@ -23,8 +24,8 @@ services:
       - "5672:5672"
       - "15672:15672"
     environment:
-      - RABBITMQ_DEFAULT_USER=guest
-      - RABBITMQ_DEFAULT_PASS=guest
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_USER:-guest}
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASSWORD:-guest}
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
     networks:
@@ -34,6 +35,7 @@ services:
       interval: 10s
       timeout: 3s
       retries: 5
+    restart: unless-stopped
 
   db-init:
     build:
@@ -41,7 +43,7 @@ services:
       dockerfile: Dockerfile.db-init
     environment:
       - DB_SERVER=sqlserver
-      - SA_PASSWORD=YourStrong@Passw0rd
+      - SA_PASSWORD=${DB_PASSWORD:-YourStrong@Passw0rd}
     depends_on:
       sqlserver:
         condition: service_healthy
@@ -58,14 +60,14 @@ services:
       - "8443:443"
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
-      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=eVetCare;User Id=sa;Password=YourStrong@Passw0rd;TrustServerCertificate=true;MultipleActiveResultSets=true
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=eVetCare;User Id=sa;Password=${DB_PASSWORD:-YourStrong@Passw0rd};TrustServerCertificate=true;MultipleActiveResultSets=true
       - RabbitMQ__Host=rabbitmq
-      - RabbitMQ__Username=guest
-      - RabbitMQ__Password=guest
-      - Jwt__Key=YourSuperSecretKeyHereMakeItLongEnoughForSecurity
-      - Jwt__Issuer=eVetCare
-      - Jwt__Audience=eVetCare
-      - Stripe__SecretKey=your_stripe_secret_key_here
+      - RabbitMQ__Username=${RABBITMQ_USER:-guest}
+      - RabbitMQ__Password=${RABBITMQ_PASSWORD:-guest}
+      - Jwt__Key=${JWT_KEY:-YourSuperSecretKeyHereMakeItLongEnoughForSecurity}
+      - Jwt__Issuer=${JWT_ISSUER:-eVetCare}
+      - Jwt__Audience=${JWT_AUDIENCE:-eVetCare}
+      - Stripe__SecretKey=${STRIPE_SECRET_KEY}
     depends_on:
       db-init:
         condition: service_completed_successfully
@@ -75,6 +77,7 @@ services:
       - evetcare-network
     volumes:
       - ./eVetCare/wwwroot/images:/app/wwwroot/images
+    restart: unless-stopped
 
   notifications:
     build:
@@ -82,10 +85,10 @@ services:
       dockerfile: Dockerfile.notifications
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
-      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=eVetCare;User Id=sa;Password=YourStrong@Passw0rd;TrustServerCertificate=true;MultipleActiveResultSets=true
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=eVetCare;User Id=sa;Password=${DB_PASSWORD:-YourStrong@Passw0rd};TrustServerCertificate=true;MultipleActiveResultSets=true
       - RabbitMQ__Host=rabbitmq
-      - RabbitMQ__Username=guest
-      - RabbitMQ__Password=guest
+      - RabbitMQ__Username=${RABBITMQ_USER:-guest}
+      - RabbitMQ__Password=${RABBITMQ_PASSWORD:-guest}
     depends_on:
       db-init:
         condition: service_completed_successfully
@@ -93,6 +96,7 @@ services:
         condition: service_healthy
     networks:
       - evetcare-network
+    restart: unless-stopped
 
 volumes:
   sqlserver_data:

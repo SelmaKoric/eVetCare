@@ -1,0 +1,23 @@
+FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
+WORKDIR /src
+
+COPY eVetCare.sln ./
+
+COPY eVetCare/ eVetCare/
+COPY eVetCare.Model/ eVetCare.Model/
+COPY eVetCare.Services/ eVetCare.Services/
+COPY eVetCare.Notifications/ eVetCare.Notifications/
+
+RUN dotnet restore eVetCare.sln
+
+RUN dotnet build eVetCare.sln -c Release --no-restore
+
+FROM build AS publish
+WORKDIR /src/eVetCare.Notifications
+RUN dotnet publish eVetCare.Notifications.csproj -c Release -o /app --no-restore
+
+FROM mcr.microsoft.com/dotnet/runtime:9.0 AS runtime
+WORKDIR /app
+COPY --from=publish /app .
+
+ENTRYPOINT ["dotnet", "eVetCare.Notifications.dll"]

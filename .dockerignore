@@ -51,6 +51,9 @@ Dockerfile*
 docker-compose*.yml
 .dockerignore
 
+# Scripts (not needed in containers)
+scripts/
+
 # Documentation
 README.md
 *.md
