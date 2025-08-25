@@ -21,17 +21,19 @@ RUN echo '#!/bin/bash\n\
 set -e\n\
 echo "Starting database initialization..."\n\
 echo "Waiting for SQL Server to be ready..."\n\
-until /opt/mssql-tools18/bin/sqlcmd -S "$DB_SERVER" -U sa -P "$SA_PASSWORD" -Q "SELECT 1" &> /dev/null\n\
+until /opt/mssql-tools18/bin/sqlcmd -C -S "$DB_SERVER" -U sa -P "$SA_PASSWORD" -Q "SELECT 1" &> /dev/null\n\
 do\n\
-  echo "SQL Server is not ready yet..."\n\
+  echo "SQL Server is not ready yet... 123"\n\
   sleep 2\n\
 done\n\
 echo "SQL Server is ready!"\n\
 echo "Creating database if it does not exist..."\n\
-/opt/mssql-tools18/bin/sqlcmd -S "$DB_SERVER" -U sa -P "$SA_PASSWORD" -Q "IF NOT EXISTS (SELECT * FROM sys.databases WHERE name = \"eVetCare\") CREATE DATABASE eVetCare;"\n\
+/opt/mssql-tools18/bin/sqlcmd -C -S "$DB_SERVER" -U sa -P "$SA_PASSWORD" -Q "IF NOT EXISTS (SELECT * FROM sys.databases WHERE name = \"eVetCare\") CREATE DATABASE eVetCare;"\n\
 echo "Database created/verified!"\n\
 echo "Running database migrations..."\n\
-dotnet ef database update --project /src/eVetCare.Services --startup-project /src/eVetCare --connection "Server=$DB_SERVER;Database=eVetCare;User Id=sa;Password=$SA_PASSWORD;TrustServerCertificate=true;MultipleActiveResultSets=true"\n\
+dotnet tool install --global dotnet-ef --version 9.0.0\n\
+export PATH="$PATH:/root/.dotnet/tools"\n\
+dotnet ef database update --context EVetCareContext --project /src/eVetCare.Services --startup-project /src/eVetCare --connection "Server=$DB_SERVER;Database=eVetCare;User Id=sa;Password=$SA_PASSWORD;TrustServerCertificate=true;MultipleActiveResultSets=true"\n\
 echo "Database initialization completed!"' > /init-db.sh && chmod +x /init-db.sh
 
 ENTRYPOINT ["/init-db.sh"]
